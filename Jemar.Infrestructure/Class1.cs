@@ -1,4 +1,4 @@
-﻿namespace Jemar.Infrestructure
+﻿namespace Jemar.Infrastructure
 {
     public class Class1
     {

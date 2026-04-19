@@ -1,6 +1,6 @@
 <Solution>
   <Project Path="Jemar.Aplication/Jemar.Aplication.csproj" Id="0c057286-9a74-4043-96d8-c46db4008cb6" />
   <Project Path="Jemar.Domain/Jemar.Domain.csproj" Id="79701709-82f3-427a-ba4e-51ae9d4ffe97" />
-  <Project Path="Jemar.Infrestructure/Jemar.Infrestructure.csproj" Id="289710ae-c0e1-4db3-90a8-c77d8c11afbf" />
+  <Project Path="Jemar.Infrestructure/Jemar.Infrastructure.csproj" Id="289710ae-c0e1-4db3-90a8-c77d8c11afbf" />
   <Project Path="Web/Jemar.Presentation.csproj" />
 </Solution>

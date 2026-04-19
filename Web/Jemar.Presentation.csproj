@@ -13,7 +13,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Jemar.Aplication\Jemar.Aplication.csproj" />
-    <ProjectReference Include="..\Jemar.Infrestructure\Jemar.Infrestructure.csproj" />
+    <ProjectReference Include="..\Jemar.Infrestructure\Jemar.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Controllers\" />
   </ItemGroup>
 
 </Project>
