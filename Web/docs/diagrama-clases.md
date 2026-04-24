@@ -1,3 +1,4 @@
+```mermaid
 classDiagram
 
 %% ======================
@@ -108,3 +109,4 @@ Employee "0..1" --> "0..*" Inquiry
 ShipmentStatus "1" --> "1" ShipmentStatusEnum
 ShipmentType "1" --> "1" ShipmentTypeEnum
 Inquiry "1" --> "1" InquiryStatusEnum
+```
