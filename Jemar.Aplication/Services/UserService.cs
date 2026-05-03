@@ -18,17 +18,16 @@ namespace Jemar.Aplication.Services
             _userRepository = userRepository;
         }
 
-        public List<UserResponse> GetAll()
+        public async Task<List<UserResponse>> GetAll()
         {
-            var users = _userRepository.GetAllAsync().Result;
-
+            var users = await _userRepository.GetAllAsync();
             return UserMapper.ToListResponse(users);
         }
 
 
-        public UserResponse? GetById(Guid id)
+        public async Task<UserResponse?> GetById(Guid id)
         {
-            var user = _userRepository.GetByIdAsync(id).Result;
+            var user = await _userRepository.GetByIdAsync(id);
 
             if (user == null)
                 return null;
@@ -36,11 +35,11 @@ namespace Jemar.Aplication.Services
             return UserMapper.ToResponse(user);
         }
 
-        public UserResponse Create(CreateUserRequest request)
+        public async Task<UserResponse> Create(CreateUserRequest request)
         {
             var user = UserMapper.ToEntity(request);
 
-            _userRepository.AddAsync(user).Wait();
+            await _userRepository.AddAsync(user);
 
             return UserMapper.ToResponse(user);
         }

@@ -17,20 +17,17 @@ namespace Jemar.Presentation.Controllers
             _userService = userService;
         }
         [HttpGet]
-        public ActionResult<List<UserResponse>> GetAll()
+        public async Task<ActionResult<List<UserResponse>>> GetAll()
         {
-            var users = _userService.GetAll();
-
-            if (!users.Any())
-                return NotFound();
+            var users = await _userService.GetAll();
 
             return Ok(users);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<UserResponse> GetById(Guid id)
+        public async Task<ActionResult<UserResponse>> GetById(Guid id)
         {
-            var user = _userService.GetById(id);
+            var user = await _userService.GetById(id);
 
             if (user == null)
                 return NotFound();
@@ -39,9 +36,9 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost]
-        public ActionResult<UserResponse> Create(CreateUserRequest request)
+        public async Task<ActionResult<UserResponse>> Create(CreateUserRequest request)
         {
-            var user = _userService.Create(request);
+            var user = await _userService.Create(request);
 
             return Ok(user);
         }

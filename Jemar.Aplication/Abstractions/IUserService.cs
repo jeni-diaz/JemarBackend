@@ -8,8 +8,8 @@ namespace Jemar.Aplication.Abstractions
 {
     public interface IUserService
     {
-        List<UserResponse> GetAll();
-        UserResponse? GetById(Guid id);
-        UserResponse Create(CreateUserRequest reequest);
+        Task<List<UserResponse>> GetAll();
+        Task<UserResponse?> GetById(Guid id);
+        Task<UserResponse> Create(CreateUserRequest request);
     }
 }
