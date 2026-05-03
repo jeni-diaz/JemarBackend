@@ -1,13 +1,19 @@
-//using Microsoft.EntityFrameworkCore;
-//using Jemar.Infrastructure;
-// using Jemar.Application.Interfaces;
-// using Jemar.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Jemar.Aplication.Abstractions.Infrastructure;
+using Jemar.Infrastructure.Persistence;
+using Jemar.Infrastructure.Persistence.Repository;
+
 var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddDbContext<JemarDbContext>(options  =>
+options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 
 var app = builder.Build();
