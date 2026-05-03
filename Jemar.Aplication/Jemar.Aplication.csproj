@@ -10,11 +10,4 @@
     <ProjectReference Include="..\Jemar.Domain\Jemar.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Mapper\" />
-    <Folder Include="Services\" />
-    <Folder Include="Responses\" />
-    <Folder Include="Requests\" />
-  </ItemGroup>
-
 </Project>

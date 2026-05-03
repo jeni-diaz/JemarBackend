@@ -20,8 +20,4 @@
     <ProjectReference Include="..\Jemar.Infrestructure\Jemar.Infrastructure.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
 </Project>
