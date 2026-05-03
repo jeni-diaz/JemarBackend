@@ -14,10 +14,5 @@ namespace Jemar.Domain.Entities
         public UserRole Role { get; set; }
         public bool IsActive { get; set; }
 
-
-        public Client? Client { get; set; }
-        public Employee? Employee { get; set; }
-        public SuperAdmin? SuperAdmin { get; set; }
-
     }
 }
