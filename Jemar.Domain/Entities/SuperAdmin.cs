@@ -4,9 +4,9 @@ using System.Text;
 
 namespace Jemar.Domain.Entities
 {
-    public abstract class BaseEntity
+    public class SuperAdmin : User
     {
-        public Guid Id { get; set; }
+        public DateTime CreatedAt { get; set; }
+
     }
 }
-
