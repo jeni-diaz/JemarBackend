@@ -1,9 +1,8 @@
-﻿using Jemar.Aplication.Abstractions.Infrastructure;
+﻿using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
-using Jemar.Domain.Entities;
 
-public class ShipmentService
+public class ShipmentService : IShipmentService
 {
     private readonly IShipmentRepository _repo;
 
@@ -12,33 +11,28 @@ public class ShipmentService
         _repo = repo;
     }
 
-    public async Task CreateAsync(CreateShipmentRequest request)
-    {
-        var shipment = new Shipment
-        {
-            Origin = request.Origin,
-            Destination = request.Destination,
-            Price = request.Price,
-            ShipmentTypeId = request.ShipmentTypeId,
-            ShipmentStatusId = 1,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(shipment);
-    }
-
-    public async Task<List<ShipmentResponse>> GetAllAsync()
+    public async Task<List<ShipmentResponse>> GetAll()
     {
         var shipments = await _repo.GetAllAsync();
+        return ShipmentMapper.ToListResponse(shipments);
+    }
 
-        return shipments.Select(x => new ShipmentResponse
-        {
-            Origin = x.Origin,
-            Destination = x.Destination,
-            Price = x.Price,
-            ShipmentType = x.ShipmentType.Name.ToString(),
-            ShipmentStatus = x.ShipmentStatus.Name.ToString()
-        }).ToList();
+    public async Task<ShipmentResponse?> GetById(Guid id)
+    {
+        var shipment = await _repo.GetByIdAsync(id);
+
+        if (shipment == null)
+            return null;
+
+        return ShipmentMapper.ToResponse(shipment);
+    }
+
+    public async Task<ShipmentResponse> Create(CreateShipmentRequest request)
+    {
+        var shipment = ShipmentMapper.ToEntity(request);
+
+        await _repo.AddAsync(shipment);
+
+        return ShipmentMapper.ToResponse(shipment);
     }
 }
