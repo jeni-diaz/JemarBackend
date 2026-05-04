@@ -9,24 +9,24 @@ namespace Jemar.Presentation.Controllers
     [Route("api/[controller]")]
     public class ShipmentController : ControllerBase
     {
-        private readonly IShipmentService _service; // ✔ interfaz
+        private readonly IShipmentService _ShipmentoService;
 
-        public ShipmentController(IShipmentService service)
+        public ShipmentController(IShipmentService ShipmentoService)
         {
-            _service = service;
+            _ShipmentoService = ShipmentoService;
         }
 
         [HttpGet]
         public async Task<ActionResult<List<ShipmentResponse>>> GetAll()
         {
-            var shipments = await _service.GetAll();
+            var shipments = await _ShipmentoService.GetAll();
             return Ok(shipments);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<ShipmentResponse>> GetById(Guid id)
         {
-            var shipment = await _service.GetById(id);
+            var shipment = await _ShipmentoService.GetById(id);
 
             if (shipment == null)
                 return NotFound();
@@ -37,7 +37,7 @@ namespace Jemar.Presentation.Controllers
         [HttpPost]
         public async Task<ActionResult<ShipmentResponse>> Create(CreateShipmentRequest request)
         {
-            var shipment = await _service.Create(request);
+            var shipment = await _ShipmentoService.Create(request);
             return Ok(shipment);
         }
     }

@@ -4,22 +4,22 @@ using Jemar.Aplication.Responses;
 
 public class ShipmentService : IShipmentService
 {
-    private readonly IShipmentRepository _repo;
+    private readonly IShipmentRepository _ShipmentRepository;
 
-    public ShipmentService(IShipmentRepository repo)
+    public ShipmentService(IShipmentRepository ShipmentRepository)
     {
-        _repo = repo;
+        _ShipmentRepository = ShipmentRepository;
     }
 
     public async Task<List<ShipmentResponse>> GetAll()
     {
-        var shipments = await _repo.GetAllAsync();
+        var shipments = await _ShipmentRepository.GetAllAsync();
         return ShipmentMapper.ToListResponse(shipments);
     }
 
     public async Task<ShipmentResponse?> GetById(Guid id)
     {
-        var shipment = await _repo.GetByIdAsync(id);
+        var shipment = await _ShipmentRepository.GetByIdAsync(id);
 
         if (shipment == null)
             return null;
@@ -31,7 +31,7 @@ public class ShipmentService : IShipmentService
     {
         var shipment = ShipmentMapper.ToEntity(request);
 
-        await _repo.AddAsync(shipment);
+        await _ShipmentRepository.AddAsync(shipment);
 
         return ShipmentMapper.ToResponse(shipment);
     }
