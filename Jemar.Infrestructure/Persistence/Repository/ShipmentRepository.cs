@@ -4,22 +4,22 @@ using Microsoft.EntityFrameworkCore;
 
 public class ShipmentRepository : IShipmentRepository
 {
-    private readonly JemarDbContext _context;
+    private readonly JemarDbContext _shipmentContext;
 
-    public ShipmentRepository(JemarDbContext context)
+    public ShipmentRepository(JemarDbContext shipmentContext)
     {
-        _context = context;
+        _shipmentContext = shipmentContext;
     }
 
     public async Task AddAsync(Shipment shipment)
     {
-        await _context.Shipments.AddAsync(shipment);
-        await _context.SaveChangesAsync();
+        await _shipmentContext.Shipments.AddAsync(shipment);
+        await _shipmentContext.SaveChangesAsync();
     }
 
     public async Task<List<Shipment>> GetAllAsync()
     {
-        return await _context.Shipments
+        return await _shipmentContext.Shipments
             .Include(x => x.ShipmentType)
             .Include(x => x.ShipmentStatus)
             .ToListAsync();
@@ -27,7 +27,7 @@ public class ShipmentRepository : IShipmentRepository
 
     public async Task<Shipment?> GetByIdAsync(Guid id)
     {
-        return await _context.Shipments
+        return await _shipmentContext.Shipments
             .Include(x => x.ShipmentType)
             .Include(x => x.ShipmentStatus)
             .FirstOrDefaultAsync(x => x.Id == id);
@@ -35,18 +35,18 @@ public class ShipmentRepository : IShipmentRepository
 
     public async Task UpdateAsync(Shipment shipment)
     {
-        _context.Shipments.Update(shipment);
-        await _context.SaveChangesAsync();
+        _shipmentContext.Shipments.Update(shipment);
+        await _shipmentContext.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(Guid id)
     {
-        var shipment = await _context.Shipments.FindAsync(id);
+        var shipment = await _shipmentContext.Shipments.FindAsync(id);
 
         if (shipment != null)
         {
-            _context.Shipments.Remove(shipment);
-            await _context.SaveChangesAsync();
+            _shipmentContext.Shipments.Remove(shipment);
+            await _shipmentContext.SaveChangesAsync();
         }
     }
 }

@@ -35,4 +35,14 @@ public class ShipmentService : IShipmentService
 
         return ShipmentMapper.ToResponse(shipment);
     }
+
+    public async Task<ShipmentResponse> Update(Guid id, UpdateShipmentRequest request)
+    {
+        var shipment = await _ShipmentRepository.GetByIdAsync(id);
+        
+        await _ShipmentRepository.UpdateAsync(shipment);
+
+        return ShipmentMapper.ToResponse(shipment);
+    }
+
 }
