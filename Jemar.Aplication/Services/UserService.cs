@@ -1,0 +1,48 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using Jemar.Aplication.Abstractions;
+using Jemar.Aplication.Requests;
+using Jemar.Aplication.Responses;
+using Jemar.Domain.Entities;
+using Jemar.Aplication.Abstractions.Infrastructure;
+using Jemar.Aplication.Mapper;
+
+namespace Jemar.Aplication.Services
+{
+    public class UserService : IUserService
+    {
+        private readonly IUserRepository _userRepository;
+        public UserService(IUserRepository userRepository)
+        {
+            _userRepository = userRepository;
+        }
+
+        public async Task<List<UserResponse>> GetAll()
+        {
+            var users = await _userRepository.GetAllAsync();
+            return UserMapper.ToListResponse(users);
+        }
+
+
+        public async Task<UserResponse?> GetById(Guid id)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+
+            if (user == null)
+                return null;
+
+            return UserMapper.ToResponse(user);
+        }
+
+        public async Task<UserResponse> Create(CreateUserRequest request)
+        {
+            var user = UserMapper.ToEntity(request);
+
+            await _userRepository.AddAsync(user);
+
+            return UserMapper.ToResponse(user);
+        }
+
+    }
+}
