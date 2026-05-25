@@ -1,52 +1,33 @@
-﻿using Jemar.Domain.Entities;
+﻿using Jemar.Application.Abstractions.Infrastructure;
+using Jemar.Domain.Entities;
 using Jemar.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-public class ShipmentRepository : IShipmentRepository
+namespace Jemar.Infrastructure.Persistence.Repository
 {
-    private readonly JemarDbContext _shipmentContext;
-
-    public ShipmentRepository(JemarDbContext shipmentContext)
+    public class ShipmentRepository
+        : BaseRepository<Shipment>, IShipmentRepository
     {
-        _shipmentContext = shipmentContext;
-    }
-
-    public async Task AddAsync(Shipment shipment)
-    {
-        await _shipmentContext.Shipments.AddAsync(shipment);
-        await _shipmentContext.SaveChangesAsync();
-    }
-
-    public async Task<List<Shipment>> GetAllAsync()
-    {
-        return await _shipmentContext.Shipments
-            .Include(x => x.ShipmentType)
-            .Include(x => x.ShipmentStatus)
-            .ToListAsync();
-    }
-
-    public async Task<Shipment?> GetByIdAsync(Guid id)
-    {
-        return await _shipmentContext.Shipments
-            .Include(x => x.ShipmentType)
-            .Include(x => x.ShipmentStatus)
-            .FirstOrDefaultAsync(x => x.Id == id);
-    }
-
-    public async Task UpdateAsync(Shipment shipment)
-    {
-        _shipmentContext.Shipments.Update(shipment);
-        await _shipmentContext.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(Guid id)
-    {
-        var shipment = await _shipmentContext.Shipments.FindAsync(id);
-
-        if (shipment != null)
+        public ShipmentRepository(JemarDbContext context)
+            : base(context)
         {
-            _shipmentContext.Shipments.Remove(shipment);
-            await _shipmentContext.SaveChangesAsync();
+        }
+
+        public override List<Shipment> GetAll()
+        {
+            return _dbSet
+                .Include(x => x.ShipmentType)
+                .Include(x => x.ShipmentStatus)
+                .Where(x => !x.IsDeleted)
+                .ToList();
+        }
+
+        public override Shipment? GetById(Guid id)
+        {
+            return _dbSet
+                .Include(x => x.ShipmentType)
+                .Include(x => x.ShipmentStatus)
+                .FirstOrDefault(x => x.Id == id && !x.IsDeleted);
         }
     }
 }
