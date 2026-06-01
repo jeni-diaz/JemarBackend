@@ -8,9 +8,9 @@
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public int ShipmentTypeId { get; set; }
-        public ShipmentType ShipmentType { get; set; }
+        public ShipmentType? ShipmentType { get; set; }
 
         public int ShipmentStatusId { get; set; }
-        public ShipmentStatus ShipmentStatus { get; set; }
+        public ShipmentStatus? ShipmentStatus { get; set; }
     }
 }

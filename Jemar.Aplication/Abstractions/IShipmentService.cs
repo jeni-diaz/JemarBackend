@@ -8,5 +8,6 @@ namespace Jemar.Aplication.Abstractions
         Task<List<ShipmentResponse>> GetAll();
         Task<ShipmentResponse?> GetById(Guid id);
         Task<ShipmentResponse> Create(CreateShipmentRequest request);
+        Task<bool> Delete(Guid id);
     }
 }
