@@ -1,67 +1,147 @@
 ﻿using Jemar.Aplication.Abstractions;
+using Jemar.Aplication.Abstractions.Infrastructure;
+using Jemar.Aplication.Mapper;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
+using Jemar.Domain.Entities;
+using Jemar.Domain.Enums;
 using Jemar.Domain.Interfaces;
 
-public class ShipmentService : IShipmentService
+namespace Jemar.Aplication.Services
 {
-    private readonly IShipmentRepository _shipmentRepository;
-
-    public ShipmentService(IShipmentRepository ShipmentRepository)
+    public class ShipmentService : IShipmentService
     {
-        _shipmentRepository = ShipmentRepository;
+        private readonly IShipmentRepository _shipmentRepository;
+
+        public ShipmentService(IShipmentRepository shipmentRepository)
+        {
+            _shipmentRepository = shipmentRepository;
+        }
+
+        public async Task<List<ShipmentResponse>> GetAllAsync(Guid currentUserId, string currentUserRole)
+        {
+            List<Shipment> shipments;
+            if(currentUserRole == UserRole.Client.ToString())
+            {
+                shipments = await _shipmentRepository.GetByClientIdAsync(currentUserId);
+            }
+            else
+            {
+                shipments = await _shipmentRepository.GetAllAsync();
+            }
+
+            return shipments.ToShipmentResponseList();
+        }
+
+        public async Task<ShipmentResponse?> GetByIdAsync(Guid id, Guid currentUserId, string currentUserRole)
+        {
+            var shipment = await _shipmentRepository.GetByIdAsync(id);
+            if (shipment == null)
+                return null;
+
+            if(currentUserRole == UserRole.Client.ToString() && shipment.ClientId != currentUserId)
+            {
+                throw new UnauthorizedAccessException("You are not authorized to access this shipment.");
+            }
+
+            return shipment.ToShipmentResponse();
+        }
+
+        public IShipmentRepository Get_shipmentRepository1()
+        {
+            return _shipmentRepository;
+        }
+
+        public async Task<ShipmentResponse>CreateAsync(CreateShipmentRequest request, Guid clientId, IShipmentRepository _shipmentRepository1)
+        {
+            var shipment = request.ToShipment(clientId);
+
+            if(request.ShipmentTypeId == (int)ShipmentTypeEnum.Express)
+            {
+                shipment.Price = 50000m;
+            }
+            else if(request.ShipmentTypeId == (int)ShipmentTypeEnum.Standar)
+            {
+                shipment.Price = 30000m;
+            }
+            else
+            {
+                throw new ArgumentException("Invalid shipment type ID.");
+            }
+
+            var saved = await _shipmentRepository.AddAsync(shipment);
+            return saved.ToShipmentResponse();
+        }
+
+        public async Task<bool> UpdateStatusAsync(Guid id, UpdateShipmentRequest request, Guid currentUserId, string currentUserRole)
+        {
+            if (currentUserRole == UserRole.Client.ToString())
+            {
+                throw new UnauthorizedAccessException("Clients are not authorized to update shipment status.");
+            }
+
+            var shipment = await _shipmentRepository.GetByIdAsync(id);
+            if (shipment == null)
+                return false;
+
+            int currentStatus = shipment.ShipmentStatusId;
+            int nextStatus = request.ShipmentStatusId;
+
+
+            if (currentStatus == (int)ShipmentStatusEnum.Pending)
+            {
+                if (nextStatus != (int)ShipmentStatusEnum.InTransit && nextStatus != (int)ShipmentStatusEnum.Cancelled)
+                {
+                    throw new ArgumentException("Pending shipment can only transition to In Transit or Cancelled.");
+                }
+            }
+            else if (currentStatus == (int)ShipmentStatusEnum.InTransit)
+            {
+                if (nextStatus != (int)ShipmentStatusEnum.Delivered && nextStatus != (int)ShipmentStatusEnum.Cancelled)
+                {
+                    throw new ArgumentException("In Transit shipment can only transition to Delivered or Cancelled.");
+                }
+            }
+            else if (currentStatus == (int)ShipmentStatusEnum.Delivered)
+            {
+                throw new ArgumentException("Delivered shipment status cannot be modified.");
+            }
+            else if (currentStatus == (int)ShipmentStatusEnum.Cancelled)
+            {
+                throw new ArgumentException("Cancelled shipment status cannot be modified.");
+            }
+
+            shipment.ShipmentStatusId = nextStatus;
+            shipment.UpdatedAt = DateTime.UtcNow;
+
+
+            shipment.EmployeeId = currentUserId;
+
+            await _shipmentRepository.UpdateAsync(shipment);
+            return true;
+        }
+
+        public async Task<bool> DeleteAsync(Guid id, Guid currentUserId, string currentUserRole)
+        {
+            var shipment = await _shipmentRepository.GetByIdAsync(id);
+            if (shipment == null)
+                return false;
+
+            if (currentUserRole == UserRole.Client.ToString())
+            {
+                if (shipment.ClientId != currentUserId)
+                {
+                    throw new UnauthorizedAccessException("You are not authorized to delete this shipment.");
+                }
+
+                if (shipment.ShipmentStatusId != (int)ShipmentStatusEnum.Pending)
+                {
+                    throw new ArgumentException("Clients can only delete shipments that are still Pending.");
+                }
+            }
+
+            await _shipmentRepository.DeleteAsync(id);
+            return true;
+        }
     }
-
-    public async Task<ShipmentResponse> Create(CreateShipmentRequest request)
-    {
-        var shipment = ShipmentMapper.ToEntity(request);
-
-        await _shipmentRepository.AddAsync(shipment);
-        await _shipmentRepository.SaveChangesAsync();
-
-        return ShipmentMapper.ToResponse(shipment);
-    }
-
-    public async Task<List<ShipmentResponse>> GetAll()
-    {
-        var shipments = await _shipmentRepository.GetAllAsync();
-        return ShipmentMapper.ToListResponse(shipments);
-    }
-
-    public async Task<ShipmentResponse?> GetById(Guid id)
-    {
-        var shipment = await _shipmentRepository.GetByIdAsync(id);
-
-        if (shipment == null)
-            return null;
-
-        return ShipmentMapper.ToResponse(shipment);
-    }
-
-    public async Task<ShipmentResponse> Update(Guid id, UpdateShipmentRequest request)
-    {
-        var shipment = await _shipmentRepository.GetByIdAsync(id);
-
-        if (shipment is null)                                         
-            throw new KeyNotFoundException($"Shipment {id} not found.");
-
-        await _shipmentRepository.UpdateAsync(shipment);
-        await _shipmentRepository.SaveChangesAsync();
-
-        return ShipmentMapper.ToResponse(shipment);
-    }
-
-
-    public async Task<bool> Delete(Guid id)
-    {
-        var shipment = await _shipmentRepository.GetByIdAsync(id);
-
-        if (shipment == null)
-            return false;
-
-        await _shipmentRepository.DeleteAsync(shipment.Id);
-        await _shipmentRepository.SaveChangesAsync();
-        return true;
-    }
-
 }

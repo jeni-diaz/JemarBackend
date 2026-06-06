@@ -2,11 +2,22 @@
 {
     public class Shipment : BaseEntity
     {
+        public Guid ClientId { get; set; }
+        public Client Client { get; set; } = null!;
+
+        public Guid? employeedId { get; set; }
+        public Employee? employee { get; set; }
+
         public string Origin { get; set; } = string.Empty;
+
         public string Destination { get; set; } = string.Empty;
+
         public decimal Price { get; set; }
+
         public DateTime CreatedAt { get; set; }
+
         public DateTime UpdatedAt { get; set; }
+
         public int ShipmentTypeId { get; set; }
         public ShipmentType? ShipmentType { get; set; }
 
