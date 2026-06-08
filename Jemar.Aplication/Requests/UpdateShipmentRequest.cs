@@ -1,7 +1,7 @@
 ﻿namespace Jemar.Aplication.Requests
 {
-    public class UpdateShipmentRequest
+    public class UpdateShipmentRequest // DTO utilizado para actualizar un envío existente
     {
-        int ShipmentStatusId { get; set; }
+        public int ShipmentStatusId { get; set; }
     }
 }
