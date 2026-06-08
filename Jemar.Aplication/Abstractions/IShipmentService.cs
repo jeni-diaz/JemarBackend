@@ -3,12 +3,22 @@ using Jemar.Aplication.Responses; // Importa los DTOs de salida (responses) que 
 
 namespace Jemar.Aplication.Abstractions
 {
-    public interface IShipmentService // Define el contrato que debe implementar cualquier servicio de Shipments
+    // Una interfaz actúa como un plano o contrato: obliga a la clase que la implemente (ShipmentService) a escribir el código real de estos métodos
+    public interface IShipmentService
     {
-        Task<List<ShipmentResponse>>GetAllAsync(Guid currentUserId, string currentUserRole); // Obtiene todos los envíos, currentUserId y currentUserRole se usan para aplicar permisos.
-        Task<ShipmentResponse?> GetByIdAsync(Guid id, Guid currentUserId, string currentUserRole);// Obtiene un envío por su ID. Devuelve null si no existe o no puede accederse.
-        Task<ShipmentResponse> CreateAsync(CreateShipmentRequest request, Guid clientId); // Crea un nuevo envío. request contiene los datos del envío. clientId identifica al cliente que realiza la operación.
-        Task<bool> UpdateStatusAsync(Guid id, UpdateShipmentRequest request, Guid currentUserId, string currentUserRole); // Actualiza el estado de un envío existente. Devuelve true si la actualización fue exitosa. Devuelve false si no se encontró o no tiene permisos.
-        Task<bool> DeleteAsync(Guid id, Guid currentUserId, string currentUserRole); // Elimina un envío. Devuelve true si se eliminó correctamente. Devuelve false si no existe o no tiene permisos.
+        // Contrato para obtener la lista de todos los envíos. Pide obligatoriamente el ID y el Rol del usuario para saber qué filtrar en el código real.
+        Task<List<ShipmentResponse>> GetAllAsync(Guid currentUserId, string currentUserRole);
+
+        // Contrato para obtener un envío por su ID. El signo "?" en "ShipmentResponse?" avisa que este método puede terminar devolviendo un objeto o un "null".
+        Task<ShipmentResponse?> GetByIdAsync(Guid id, Guid currentUserId, string currentUserRole);
+
+        // Contrato para crear un envío nuevo. Recibe el formulario del frontend (request) y el ID del cliente dueño. Devuelve los datos del envío ya creado.
+        Task<ShipmentResponse> CreateAsync(CreateShipmentRequest request, Guid clientId);
+
+        // Contrato para cambiar el estado logístico de un paquete. Devuelve true si el cambio fue exitoso, o false si no se encontró el envío.
+        Task<bool> UpdateStatusAsync(Guid id, UpdateShipmentRequest request, Guid currentUserId, string currentUserRole);
+
+        // Contrato para eliminar un envío del sistema. Devuelve true si se pudo borrar con éxito, o false si falló la operación.
+        Task<bool> DeleteAsync(Guid id, Guid currentUserId, string currentUserRole);
     }
 }

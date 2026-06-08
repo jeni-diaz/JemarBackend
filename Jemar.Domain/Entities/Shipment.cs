@@ -5,8 +5,8 @@
         public Guid ClientId { get; set; }
         public Client Client { get; set; } = null!;
 
-        public Guid? employeedId { get; set; }
-        public Employee? employee { get; set; }
+        public Guid? EmployeeId { get; set; }
+        public Employee? Employee { get; set; }
 
         public string Origin { get; set; } = string.Empty;
 
