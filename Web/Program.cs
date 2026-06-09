@@ -3,6 +3,7 @@ using Jemar.Aplication.Abstractions.Infrastructure;
 using Jemar.Aplication.Services;
 using Jemar.Infrastructure.Persistence;
 using Jemar.Infrastructure.Persistence.Repository;
+using Jemar.Presentation.Middlewares;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,9 +31,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+app.UseAuthentication();
 
 app.MapControllers();
 
