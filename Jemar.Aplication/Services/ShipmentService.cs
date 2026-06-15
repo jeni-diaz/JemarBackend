@@ -5,19 +5,18 @@ using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
 using Jemar.Domain.Entities;
 using Jemar.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Jemar.Aplication.Services
 {
     public class ShipmentService : IShipmentService
     {
         private readonly IShipmentRepository _shipmentRepository;
+        private readonly IOpenStreetMapService _openStreetMapService;
 
-        public ShipmentService(IShipmentRepository shipmentRepository)
+        public ShipmentService(IShipmentRepository shipmentRepository, IOpenStreetMapService openStreetMapService)
         {
             _shipmentRepository = shipmentRepository;
+            _openStreetMapService = openStreetMapService;
         }
 
         public async Task<List<ShipmentResponse>> GetAllAsync(Guid currentUserId, string currentUserRole)
@@ -51,8 +50,25 @@ namespace Jemar.Aplication.Services
 
         public async Task<ShipmentResponse> CreateAsync(CreateShipmentRequest request, Guid clientId)
         {
+            // Validamos la dirección de Origen con tu servicio
+            var sugerenciasOrigen = await _openStreetMapService.AutocompletarDireccionAsync(request.Origin);
+            if (sugerenciasOrigen == null || !sugerenciasOrigen.Any())
+            {
+                throw new ArgumentException($"La dirección de origen '{request.Origin}' no es válida en Argentina.");
+            }
+
+            // Validamos la dirección de Destino con tu servicio
+            var sugerenciasDestino = await _openStreetMapService.AutocompletarDireccionAsync(request.Destination);
+            if (sugerenciasDestino == null || !sugerenciasDestino.Any())
+            {
+                throw new ArgumentException($"La dirección de destino '{request.Destination}' no es válida en Argentina.");
+            }
+
             var shipment = request.ToShipment(clientId);
 
+            // Reemplazamos por la dirección oficial/normalizada devuelta por OpenStreetMap
+            shipment.Origin = sugerenciasOrigen.First();
+            shipment.Destination = sugerenciasDestino.First();
 
             if (request.ShipmentTypeId == (int)ShipmentTypeEnum.Express)
             {

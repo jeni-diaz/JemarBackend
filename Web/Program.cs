@@ -83,6 +83,12 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 
+builder.Services.AddHttpClient<IOpenStreetMapService, OpenStreetMapService>(client =>
+{
+    client.BaseAddress = new Uri("https://nominatim.openstreetmap.org");
+    client.DefaultRequestHeaders.Add("User-Agent", "JemarEnviosApp/1.0 (contacto@tu-correo.com)");
+});
+
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IShipmentService, ShipmentService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -101,6 +107,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseMiddleware<Jemar.Presentation.Middleware.RoleMiddleware>();
 
 app.MapControllers();
 
