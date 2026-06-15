@@ -8,12 +8,13 @@ using Jemar.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Jemar.Presentation.Authorization;
 
 namespace Jemar.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Policy = "SuperAdminOnly")]
+    [Authorize(Policy = Policies.SuperAdminOnly)]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;

@@ -7,6 +7,7 @@ using Jemar.Aplication.Responses;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Jemar.Presentation.Authorization;
 
 namespace Jemar.Presentation.Controllers
 {
@@ -76,7 +77,7 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPut("{id}/status")]
-        [Authorize(Policy = "EmployeeOrAbove")]
+        [Authorize(Policy = Policies.EmployeeOrAbove)]
         public async Task<IActionResult> UpdateStatus(Guid id, UpdateShipmentRequest request)
         {
             try

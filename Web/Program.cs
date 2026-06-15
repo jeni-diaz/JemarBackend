@@ -3,6 +3,7 @@ using Jemar.Aplication.Abstractions.Infrastructure;
 using Jemar.Aplication.Services;
 using Jemar.Infrastructure.Persistence;
 using Jemar.Infrastructure.Persistence.Repository;
+using Jemar.Presentation.Authorization;
 using Jemar.Presentation.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -66,9 +67,14 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SuperAdmin"));
-    options.AddPolicy("EmployeeOrAbove", policy => policy.RequireRole("Employee", "SuperAdmin"));
-    options.AddPolicy("ClientOrAbove", policy => policy.RequireRole("Client", "Employee", "SuperAdmin"));
+    options.AddPolicy(Policies.SuperAdminOnly,
+        policy => policy.RequireRole("SuperAdmin"));
+
+    options.AddPolicy(Policies.EmployeeOrAbove,
+        policy => policy.RequireRole("Employee", "SuperAdmin"));
+
+    options.AddPolicy(Policies.ClientOrAbove,
+        policy => policy.RequireRole("Client", "Employee", "SuperAdmin"));
 });
 
 
