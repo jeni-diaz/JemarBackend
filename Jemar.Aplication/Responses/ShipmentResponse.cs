@@ -1,6 +1,6 @@
 ﻿namespace Jemar.Aplication.Responses
 {
-    public class ShipmentResponse
+    public class ShipmentResponse // DTO utilizado para devolver información de un Shipment al cliente
     {
         public Guid Id { get; set; }
         public string Origin { get; set; } = string.Empty;
