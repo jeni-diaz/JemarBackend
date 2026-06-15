@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace Jemar.Application.Abstractions.Infrastructure
+namespace Jemar.Aplication.Abstractions.Infrastructure
 {
     public interface IBaseRepository<T> where T : class
     {
-        List<T> GetAll();
+        Task<List<T>> GetAllAsync();
+        Task<T?> GetByIdAsync(Guid id);
+        Task<T> AddAsync(T entity);
+        Task UpdateAsync(T entity);
+        Task DeleteAsync(Guid id);
 
-        T? GetById(Guid id);
-
-        T Add(T entity);
-
-        void Update(T entity);
-
-        void Delete(Guid id);
     }
 }

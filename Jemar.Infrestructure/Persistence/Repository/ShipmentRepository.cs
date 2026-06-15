@@ -1,33 +1,43 @@
-﻿using Jemar.Application.Abstractions.Infrastructure;
+﻿using Jemar.Aplication.Abstractions.Infrastructure;
 using Jemar.Domain.Entities;
-using Jemar.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Jemar.Infrastructure.Persistence.Repository
 {
-    public class ShipmentRepository
-        : BaseRepository<Shipment>, IShipmentRepository
+    public class ShipmentRepository : BaseRepository<Shipment>, IShipmentRepository
     {
-        public ShipmentRepository(JemarDbContext context)
-            : base(context)
+        public ShipmentRepository(JemarDbContext context) : base(context)
         {
         }
 
-        public override List<Shipment> GetAll()
+        public override async Task<List<Shipment>> GetAllAsync()
         {
-            return _dbSet
-                .Include(x => x.ShipmentType)
-                .Include(x => x.ShipmentStatus)
-                .Where(x => !x.IsDeleted)
-                .ToList();
+            return await _context.Shipments
+                .Include(s => s.ShipmentType)
+                .Include(s => s.ShipmentStatus)
+                .Where(s => !s.IsDeleted)
+                .ToListAsync();
         }
 
-        public override Shipment? GetById(Guid id)
+        public override async Task<Shipment?> GetByIdAsync(Guid id)
         {
-            return _dbSet
-                .Include(x => x.ShipmentType)
-                .Include(x => x.ShipmentStatus)
-                .FirstOrDefault(x => x.Id == id && !x.IsDeleted);
+            return await _context.Shipments
+                .Include(s => s.ShipmentType)
+                .Include(s => s.ShipmentStatus)
+                .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+        }
+
+        public async Task<List<Shipment>> GetByClientIdAsync(Guid clientId)
+        {
+            return await _context.Shipments
+                .Include(s => s.ShipmentType)
+                .Include(s => s.ShipmentStatus)
+                .Where(s => s.ClientId == clientId && !s.IsDeleted)
+                .ToListAsync();
         }
     }
 }

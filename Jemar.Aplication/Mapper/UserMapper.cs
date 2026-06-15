@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using Jemar.Domain.Entities;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
@@ -10,34 +10,52 @@ namespace Jemar.Aplication.Mapper
 {
     public static class UserMapper
     {
-        public static User ToEntity(CreateUserRequest request)
+        public static User ToUser(this CreateUserRequest request)
         {
-            return new User
+            User user;
+            if (request.Role == (int)UserRole.Client)
             {
-                Id = Guid.NewGuid(),
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Email = request.Email,
-                Password = request.Password,
-                Role = (UserRole)request.Role,
-                IsActive = true
-            };
+                user = new Client { RegistrationDate = DateTime.UtcNow };
+            }
+            else if (request.Role == (int)UserRole.Employee)
+            {
+                user = new Employee { HireDate = DateTime.UtcNow, Position = "Staff" };
+            }
+            else if (request.Role == (int)UserRole.SuperAdmin)
+            {
+                user = new SuperAdmin { CreatedAt = DateTime.UtcNow };
+            }
+            else
+            {
+                user = new User();
+            }
+
+            user.Id = Guid.NewGuid();
+            user.FirstName = request.FirstName;
+            user.LastName = request.LastName;
+            user.Email = request.Email;
+            user.Password = request.Password;
+            user.RoleId = request.Role;
+            user.IsActive = true;
+
+            return user;
         }
 
-        public static UserResponse ToResponse(User user)
+        public static UserResponse ToUserResponse(this User user)
         {
             return new UserResponse
             {
                 Id = user.Id,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Email = user.Email
+                Email = user.Email,
+                Role = user.Role?.Name.ToString() ?? ((UserRole)user.RoleId).ToString()
             };
         }
 
-        public static List<UserResponse> ToListResponse(List<User> users)
+        public static List<UserResponse> ToUserResponseList(this List<User> users)
         {
-            return users.Select(ToResponse).ToList();
+            return users.Select(u => u.ToUserResponse()).ToList();
         }
     }
 }

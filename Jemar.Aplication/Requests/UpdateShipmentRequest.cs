@@ -2,6 +2,6 @@
 {
     public class UpdateShipmentRequest
     {
-        int ShipmentStatusId { get; set; }
+        public int ShipmentStatusId { get; set; }
     }
 }

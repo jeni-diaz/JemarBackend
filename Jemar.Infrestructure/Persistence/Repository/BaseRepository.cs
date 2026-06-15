@@ -1,75 +1,60 @@
-﻿using Jemar.Application.Abstractions.Infrastructure;
+﻿using Jemar.Aplication.Abstractions.Infrastructure;
 using Jemar.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Jemar.Infrastructure.Persistence.Repository
 {
-    public class BaseRepository<T> : IBaseRepository<T>
-        where T : BaseEntity
+    public class BaseRepository<T> : IBaseRepository<T> where T : BaseEntity
     {
         protected readonly JemarDbContext _context;
-        protected readonly DbSet<T> _dbSet;
 
         public BaseRepository(JemarDbContext context)
         {
             _context = context;
-            _dbSet = context.Set<T>();
         }
 
-        public virtual List<T> GetAll()
+        public virtual async Task<List<T>> GetAllAsync()
         {
-            return _dbSet
-                .Where(x => !x.IsDeleted)
-                .ToList();
+            return await _context.Set<T>()
+                .Where(e => !e.IsDeleted)
+                .ToListAsync();
         }
 
-        public virtual T? GetById(Guid id)
+        public virtual async Task<T?> GetByIdAsync(Guid id)
         {
-            return _dbSet
-                .FirstOrDefault(x => x.Id == id && !x.IsDeleted);
+            return await _context.Set<T>()
+                .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
         }
 
-        public virtual T Add(T entity)
+        public virtual async Task<T> AddAsync(T entity)
         {
-            entity.UpdatedDateTime = DateTime.UtcNow;
-
-            _dbSet.Add(entity);
-
-            SaveChanges();
-
+            entity.IsDeleted = false;
+            await _context.Set<T>().AddAsync(entity);
+            await _context.SaveChangesAsync();
             return entity;
         }
 
-        public virtual void Update(T entity)
+        public virtual async Task UpdateAsync(T entity)
         {
             entity.UpdatedDateTime = DateTime.UtcNow;
-
-            _dbSet.Update(entity);
-
-            SaveChanges();
+            _context.Set<T>().Update(entity);
+            await _context.SaveChangesAsync();
         }
 
-        public virtual void Delete(Guid id)
+        public virtual async Task DeleteAsync(Guid id)
         {
-            var entity = GetById(id);
-
+            var entity = await GetByIdAsync(id);
             if (entity != null)
             {
                 entity.IsDeleted = true;
-
                 entity.DeletedDateTime = DateTime.UtcNow;
-
-                entity.UpdatedDateTime = DateTime.UtcNow;
-
-                _dbSet.Update(entity);
-
-                SaveChanges();
+                _context.Set<T>().Update(entity);
+                await _context.SaveChangesAsync();
             }
-        }
-
-        protected void SaveChanges()
-        {
-            _context.SaveChanges();
         }
     }
 }

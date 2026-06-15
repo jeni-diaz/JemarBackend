@@ -1,39 +1,45 @@
 ﻿using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
 using Jemar.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
-public static class ShipmentMapper
+namespace Jemar.Aplication.Mapper
 {
-    public static Shipment ToEntity(CreateShipmentRequest request)
+    public static class ShipmentMapper
     {
-        return new Shipment
+        public static Shipment ToShipment(this CreateShipmentRequest request, Guid clientId)
         {
-            Id = Guid.NewGuid(),
-            Origin = request.Origin,
-            Destination = request.Destination,
-            Price = request.Price,
-            ShipmentTypeId = request.ShipmentTypeId,
-            ShipmentStatusId = 1,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-    }
+            return new Shipment
+            {
+                Id = Guid.NewGuid(),
+                Origin = request.Origin,
+                Destination = request.Destination,
+                ShipmentTypeId = request.ShipmentTypeId,
+                ShipmentStatusId = 1,
+                ClientId = clientId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+        }
 
-    public static ShipmentResponse ToResponse(Shipment shipment)
-    {
-        return new ShipmentResponse
+        public static ShipmentResponse ToShipmentResponse(this Shipment shipment)
         {
-            Id = shipment.Id,
-            Origin = shipment.Origin,
-            Destination = shipment.Destination,
-            Price = shipment.Price,
-            ShipmentType = shipment.ShipmentType.Name.ToString(),
-            ShipmentStatus = shipment.ShipmentStatus.Name.ToString()
-        };
-    }
+            return new ShipmentResponse
+            {
+                Id = shipment.Id,
+                Origin = shipment.Origin,
+                Destination = shipment.Destination,
+                Price = shipment.Price,
+                ShipmentType = shipment.ShipmentType?.Name.ToString() ?? string.Empty,
+                ShipmentStatus = shipment.ShipmentStatus?.Name.ToString() ?? string.Empty
+            };
+        }
 
-    public static List<ShipmentResponse> ToListResponse(List<Shipment> shipments)
-    {
-        return shipments.Select(ToResponse).ToList();
+        public static List<ShipmentResponse> ToShipmentResponseList(this List<Shipment> shipments)
+        {
+            return shipments.Select(s => s.ToShipmentResponse()).ToList();
+        }
     }
 }

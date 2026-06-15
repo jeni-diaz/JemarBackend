@@ -1,10 +1,12 @@
 ﻿using Jemar.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-public interface IShipmentRepository
+namespace Jemar.Aplication.Abstractions.Infrastructure
 {
-    Task<List<Shipment>> GetAllAsync();
-    Task<Shipment?> GetByIdAsync(Guid id);
-    Task AddAsync(Shipment shipment);
-    Task UpdateAsync(Shipment shipment);
-    Task DeleteAsync(Guid id);
+    public interface IShipmentRepository : IBaseRepository<Shipment>
+    {
+        Task<List<Shipment>> GetByClientIdAsync(Guid clientId);
+    }
 }
