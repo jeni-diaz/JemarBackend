@@ -1,5 +1,4 @@
 ﻿using Jemar.Domain.Entities;
-using Jemar.Domain.Enums;
 using Jemar.Domain.Interfaces;
 using Jemar.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -16,25 +15,23 @@ public class ShipmentRepository : IShipmentRepository
     }
 
     // Método para guardar un nuevo envío en la base de datos
-    public async Task AddAsync(Shipment shipment)
+    public async Task<Shipment> AddAsync(Shipment shipment)
     {
         // Prepara el objeto en memoria para ser insertado
         await _shipmentContext.Shipments.AddAsync(shipment);
         // Guarda físicamente los cambios ejecutando el comando INSERT en SQL
         await _shipmentContext.SaveChangesAsync();
+        // Retorna el envío ya guardado con todos sus datos
+        return shipment;
     }
 
-    // Método para obtener TODOS los envíos del sistema (Filtrando los que fueron borrados lógicamente)
+    // Método para obtener TODOS los envíos del sistema
     public async Task<List<Shipment>> GetAllAsync()
     {
         // Vamos a la tabla de envíos...
         return await _shipmentContext.Shipments
             .Include(x => x.ShipmentType)   // Trae los datos de la tabla relacionada de Tipos de envío (JOIN en SQL)
             .Include(x => x.ShipmentStatus) // Trae los datos de la tabla relacionada de Estados de envío (JOIN en SQL)
-
-            //Filtramos en SQL para traer solo los envíos cuyo estado NO sea igual a Deleted (5)
-            .Where(x => x.ShipmentStatusId != (int)ShipmentStatusEnum.Deleted)
-
             .ToListAsync(); // Ejecuta la consulta final en la base de datos y la transforma en una lista de C#
     }
 
@@ -66,25 +63,19 @@ public class ShipmentRepository : IShipmentRepository
         await _shipmentContext.SaveChangesAsync();
     }
 
-    // Método para eliminar LÓGICAMENTE un envío cambiando su estado por base de datos
+    // Método para eliminar físicamente un envío de la base de datos
     public async Task DeleteAsync(Guid id)
     {
         // Buscamos primero el registro completo por su ID en la base de datos
         var shipment = await _shipmentContext.Shipments.FindAsync(id);
 
-        // Si el envío existe (no es nulo), procedemos a cambiar su estado
+        // Si el envío existe (no es nulo), procedemos a eliminarlo
         if (shipment != null)
         {
-            // Cambiamos su ShipmentStatusId al número que representa "Deleted"
-            shipment.ShipmentStatusId = (int)ShipmentStatusEnum.Deleted;
+            // Le avisamos a Entity Framework que elimine este registro
+            _shipmentContext.Shipments.Remove(shipment);
 
-            // Registramos la fecha exacta UTC en la que ocurrió esta "eliminación"
-            shipment.UpdatedAt = DateTime.UtcNow;
-
-            // Le avisamos a Entity Framework que actualice este registro modificado
-            _shipmentContext.Shipments.Update(shipment);
-
-            // Confirmamos los cambios ejecutando un comando UPDATE en SQL (en lugar de un DELETE)
+            // Confirmamos los cambios ejecutando un comando DELETE en SQL
             await _shipmentContext.SaveChangesAsync();
         }
     }

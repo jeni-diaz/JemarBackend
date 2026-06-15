@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Jemar.Domain.Entities
+﻿namespace Jemar.Domain.Entities
 {
     public abstract class BaseEntity
     {
         public Guid Id { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime? UpdatedDateTime { get; set; }
+        public DateTime? DeletedDateTime { get; set; }
     }
 }
-

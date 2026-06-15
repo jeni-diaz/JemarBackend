@@ -21,7 +21,7 @@ namespace Jemar.Aplication.Services
         public async Task<List<ShipmentResponse>> GetAllAsync(Guid currentUserId, string currentUserRole)
         {
             // Guardamos un verdadero/falso: será true si el rol del usuario actual es "Client"
-            var isClient = currentUserRole == UserRole.Client.ToString();
+            var isClient = currentUserRole == UserRoleEnum.Client.ToString();
 
             // Si es cliente, busca solo los envíos que le pertenecen a su ID. Si no es cliente, busca TODOS los envíos.
             var shipments = isClient
@@ -42,7 +42,7 @@ namespace Jemar.Aplication.Services
             if (shipment == null) return null;
 
             // Seguridad: Si el usuario es cliente, pero el envío que busca pertenece a OTRO cliente, bloqueamos el acceso
-            if (currentUserRole == UserRole.Client.ToString() && shipment.ClientId != currentUserId)
+            if (currentUserRole == UserRoleEnum.Client.ToString() && shipment.ClientId != currentUserId)
             {
                 // Disparamos un error de acceso no autorizado
                 throw new UnauthorizedAccessException("You are not authorized to access this shipment.");
@@ -82,7 +82,7 @@ namespace Jemar.Aplication.Services
         public async Task<bool> UpdateStatusAsync(Guid id, UpdateShipmentRequest request, Guid currentUserId, string currentUserRole)
         {
             // Seguridad: Si el usuario es un cliente, no tiene permiso de cambiar estados. Solo los empleados pueden.
-            if (currentUserRole == UserRole.Client.ToString())
+            if (currentUserRole == UserRoleEnum.Client.ToString())
             {
                 throw new UnauthorizedAccessException("Clients are not authorized to update shipment status.");
             }
@@ -140,7 +140,7 @@ namespace Jemar.Aplication.Services
             if (shipment == null) return false;
 
             // Si el usuario que intenta borrar es un Cliente, aplicamos restricciones estrictas
-            if (currentUserRole == UserRole.Client.ToString())
+            if (currentUserRole == UserRoleEnum.Client.ToString())
             {
                 // Restricción 1: Un cliente no puede borrar el envío de otro cliente. Validamos que sea el dueño.
                 if (shipment.ClientId != currentUserId)
