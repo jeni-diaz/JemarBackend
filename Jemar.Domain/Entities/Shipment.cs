@@ -23,5 +23,10 @@
 
         public int ShipmentStatusId { get; set; }
         public ShipmentStatus? ShipmentStatus { get; set; }
+
+        public Guid ClientId { get; set; }
+        public Client Client { get; set; } = null!;
+        public Guid? EmployeeId { get; set; }
+        public Employee? Employee { get; set; }
     }
 }

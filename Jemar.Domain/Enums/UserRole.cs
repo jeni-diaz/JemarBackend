@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Jemar.Domain.Enums
+﻿namespace Jemar.Domain.Enums
 {
-    public enum  UserRole
+    public enum UserRole
     {
-        Client,
-        Employee,
-        SuperAdmin
+        Client = 1,
+        Employee = 2,
+        SuperAdmin = 3
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
 
@@ -8,8 +8,9 @@ namespace Jemar.Aplication.Abstractions
 {
     public interface IUserService
     {
-        Task<List<UserResponse>> GetAll();
-        Task<UserResponse?> GetById(Guid id);
-        Task<UserResponse> Create(CreateUserRequest request);
+        Task<List<UserResponse>> GetAllAsync();
+        Task<UserResponse?> GetByIdAsync(Guid id);
+        Task<UserResponse> CreateAsync(CreateUserRequest request);
+        Task<bool> UpdateRoleAsync(Guid userId, UpdateUserRoleRequest request);
     }
 }

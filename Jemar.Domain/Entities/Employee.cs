@@ -9,8 +9,8 @@ namespace Jemar.Domain.Entities
         public DateTime HireDate { get; set; }
         public string Position { get; set; } = string.Empty;
 
-        //public ICollection<Shipment>? Shipments { get; set; }
-        //public ICollection<Inquiry>? Inquiries { get; set; }
+        public ICollection<Shipment> AssignedShipments { get; set; } = new List<Shipment>();
+        //public ICollection<Inquiry> AssignedInquiries { get; set; } = new List<Inquiry>();
 
     }
 }
