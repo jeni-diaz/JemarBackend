@@ -4,6 +4,7 @@ using Jemar.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Jemar.Infrastructure.Migrations
 {
     [DbContext(typeof(JemarDbContext))]
-    partial class JemarDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260615215603_InquiryEntity")]
+    partial class InquiryEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,9 +38,6 @@ namespace Jemar.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedDateTime")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DeletedDateTime")
@@ -133,9 +133,6 @@ namespace Jemar.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedDateTime")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DeletedDateTime")
@@ -270,9 +267,6 @@ namespace Jemar.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime?>("DeletedDateTime")
                         .HasColumnType("datetime2");
 
@@ -304,22 +298,65 @@ namespace Jemar.Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedDateTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("UserType")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("nvarchar(13)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("RoleId");
 
                     b.ToTable("Users");
+
+                    b.HasDiscriminator<string>("UserType").HasValue("User");
+
+                    b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("Jemar.Domain.Entities.Client", b =>
+                {
+                    b.HasBaseType("Jemar.Domain.Entities.User");
+
+                    b.Property<DateTime>("RegistrationDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasDiscriminator().HasValue("Client");
+                });
+
+            modelBuilder.Entity("Jemar.Domain.Entities.Employee", b =>
+                {
+                    b.HasBaseType("Jemar.Domain.Entities.User");
+
+                    b.Property<DateTime>("HireDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasDiscriminator().HasValue("Employee");
+                });
+
+            modelBuilder.Entity("Jemar.Domain.Entities.SuperAdmin", b =>
+                {
+                    b.HasBaseType("Jemar.Domain.Entities.User");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasDiscriminator().HasValue("SuperAdmin");
                 });
 
             modelBuilder.Entity("Jemar.Domain.Entities.Inquiry", b =>
                 {
-                    b.HasOne("Jemar.Domain.Entities.User", "Client")
+                    b.HasOne("Jemar.Domain.Entities.Client", "Client")
                         .WithMany("Inquiries")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Jemar.Domain.Entities.User", "Employee")
+                    b.HasOne("Jemar.Domain.Entities.Employee", "Employee")
                         .WithMany("AssignedInquiries")
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -331,13 +368,13 @@ namespace Jemar.Infrastructure.Migrations
 
             modelBuilder.Entity("Jemar.Domain.Entities.Shipment", b =>
                 {
-                    b.HasOne("Jemar.Domain.Entities.User", "Client")
+                    b.HasOne("Jemar.Domain.Entities.Client", "Client")
                         .WithMany("Shipments")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Jemar.Domain.Entities.User", "Employee")
+                    b.HasOne("Jemar.Domain.Entities.Employee", "Employee")
                         .WithMany("AssignedShipments")
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -374,15 +411,18 @@ namespace Jemar.Infrastructure.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("Jemar.Domain.Entities.User", b =>
+            modelBuilder.Entity("Jemar.Domain.Entities.Client", b =>
+                {
+                    b.Navigation("Inquiries");
+
+                    b.Navigation("Shipments");
+                });
+
+            modelBuilder.Entity("Jemar.Domain.Entities.Employee", b =>
                 {
                     b.Navigation("AssignedInquiries");
 
                     b.Navigation("AssignedShipments");
-
-                    b.Navigation("Inquiries");
-
-                    b.Navigation("Shipments");
                 });
 #pragma warning restore 612, 618
         }

@@ -4,6 +4,7 @@ using Jemar.Aplication.Services;
 using Jemar.Infrastructure.Persistence;
 using Jemar.Infrastructure.Persistence.Repository;
 using Jemar.Presentation.Authorization;
+using Jemar.Presentation.Middleware;
 using Jemar.Presentation.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -77,14 +78,22 @@ builder.Services.AddAuthorization(options =>
         policy => policy.RequireRole("Client", "Employee", "SuperAdmin"));
 });
 
+builder.Services.AddHttpClient<IOpenStreetMapService, OpenStreetMapService>(client =>
+{
+    client.BaseAddress = new Uri("https://nominatim.openstreetmap.org");
+    client.DefaultRequestHeaders.Add("User-Agent", "JemarEnviosApp/1.0 (contacto@tu-correo.com)");
+});
+
 
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IInquiryRepository, InquiryRepository>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IShipmentService, ShipmentService>();
+builder.Services.AddScoped<IInquiryService, InquiryService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
@@ -100,6 +109,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
+app.UseMiddleware<RoleMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();

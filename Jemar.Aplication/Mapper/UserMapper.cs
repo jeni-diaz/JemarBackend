@@ -12,33 +12,18 @@ namespace Jemar.Aplication.Mapper
     {
         public static User ToUser(this CreateUserRequest request)
         {
-            User user;
-            if (request.Role == (int)UserRole.Client)
+            return new User
             {
-                user = new Client { RegistrationDate = DateTime.UtcNow };
-            }
-            else if (request.Role == (int)UserRole.Employee)
-            {
-                user = new Employee { HireDate = DateTime.UtcNow, Position = "Staff" };
-            }
-            else if (request.Role == (int)UserRole.SuperAdmin)
-            {
-                user = new SuperAdmin { CreatedAt = DateTime.UtcNow };
-            }
-            else
-            {
-                user = new User();
-            }
+                Id = Guid.NewGuid(),
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Email = request.Email,
+                Password = request.Password,
+                RoleId = request.Role,
+                IsActive = true
+            };
 
-            user.Id = Guid.NewGuid();
-            user.FirstName = request.FirstName;
-            user.LastName = request.LastName;
-            user.Email = request.Email;
-            user.Password = request.Password;
-            user.RoleId = request.Role;
-            user.IsActive = true;
 
-            return user;
         }
 
         public static UserResponse ToUserResponse(this User user)

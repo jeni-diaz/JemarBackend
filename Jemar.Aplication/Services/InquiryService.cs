@@ -1,0 +1,147 @@
+using Jemar.Aplication.Abstractions;
+using Jemar.Aplication.Abstractions.Infrastructure;
+using Jemar.Aplication.Mapper;
+using Jemar.Aplication.Requests;
+using Jemar.Aplication.Responses;
+using Jemar.Domain.Entities;
+using Jemar.Domain.Enums;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace Jemar.Aplication.Services
+{
+    public class InquiryService : IInquiryService
+    {
+        private readonly IInquiryRepository _inquiryRepository;
+        private readonly IUserRepository _userRepository;
+
+        public InquiryService(IInquiryRepository inquiryRepository, IUserRepository userRepository)
+        {
+            _inquiryRepository = inquiryRepository;
+            _userRepository = userRepository;
+        }
+
+        public async Task<List<InquiryResponse>> GetAllAsync(Guid currentUserId, string currentUserRole)
+        {
+            List<Inquiry> inquiries;
+            if (currentUserRole == UserRole.Client.ToString())
+            {
+                inquiries = await _inquiryRepository.GetByClientIdAsync(currentUserId);
+            }
+            else
+            {
+                inquiries = await _inquiryRepository.GetAllAsync();
+            }
+
+            return inquiries.ToInquiryResponseList();
+        }
+
+        public async Task<InquiryResponse?> GetByIdAsync(Guid id, Guid currentUserId, string currentUserRole)
+        {
+            var inquiry = await _inquiryRepository.GetByIdAsync(id);
+            if (inquiry == null)
+                return null;
+
+            if (currentUserRole == UserRole.Client.ToString() && inquiry.ClientId != currentUserId)
+            {
+                throw new UnauthorizedAccessException("You are not authorized to view this inquiry.");
+            }
+
+            return inquiry.ToInquiryResponse();
+        }
+
+        public async Task<InquiryResponse> CreateAsync(CreateInquiryRequest request, Guid clientId)
+        {
+            var user = await _userRepository.GetByIdAsync(clientId);
+            if (user == null)
+            {
+                throw new ArgumentException("Client not found.");
+            }
+
+            if (user.RoleId != (int)UserRole.Client)
+            {
+                throw new ArgumentException("User is not a Client.");
+            }
+
+            var inquiry = request.ToInquiry(user);
+            var saved = await _inquiryRepository.AddAsync(inquiry);
+            return saved.ToInquiryResponse();
+        }
+
+        public async Task<bool> RespondAsync(Guid id, RespondInquiryRequest request, Guid currentUserId, string currentUserRole)
+        {
+            var inquiry = await _inquiryRepository.GetByIdAsync(id);
+            if (inquiry == null)
+                return false;
+
+            if (currentUserRole == UserRole.Employee.ToString() || currentUserRole == UserRole.SuperAdmin.ToString())
+            {
+                inquiry.Response = request.Message;
+                inquiry.Status = InquiryStatusEnum.Answered;
+                inquiry.EmployeeId = currentUserId;
+                inquiry.UpdatedDateTime = DateTime.UtcNow;
+
+                await _inquiryRepository.UpdateAsync(inquiry);
+                return true;
+            }
+            else if (currentUserRole == UserRole.Client.ToString())
+            {
+                if (inquiry.ClientId != currentUserId)
+                {
+                    throw new UnauthorizedAccessException("You are not authorized to respond to this inquiry.");
+                }
+
+                if (inquiry.Status != InquiryStatusEnum.Answered)
+                {
+                    throw new ArgumentException("You can only respond to inquiries that have been answered by our staff.");
+                }
+
+                inquiry.ClientReply = request.Message;
+                inquiry.Status = InquiryStatusEnum.InProgress;
+                inquiry.UpdatedDateTime = DateTime.UtcNow;
+
+                await _inquiryRepository.UpdateAsync(inquiry);
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task<bool> CloseAsync(Guid id)
+        {
+            var inquiry = await _inquiryRepository.GetByIdAsync(id);
+            if (inquiry == null)
+                return false;
+
+            inquiry.Status = InquiryStatusEnum.Closed;
+            inquiry.UpdatedDateTime = DateTime.UtcNow;
+
+            await _inquiryRepository.UpdateAsync(inquiry);
+            return true;
+        }
+
+        public async Task<bool> DeleteAsync(Guid id, Guid currentUserId, string currentUserRole)
+        {
+            var inquiry = await _inquiryRepository.GetByIdAsync(id);
+            if (inquiry == null)
+                return false;
+
+            if (currentUserRole == UserRole.Client.ToString())
+            {
+                if (inquiry.ClientId != currentUserId)
+                {
+                    throw new UnauthorizedAccessException("You are not authorized to delete this inquiry.");
+                }
+
+                if (inquiry.Status != InquiryStatusEnum.New)
+                {
+                    throw new ArgumentException("Clients can only delete inquiries that are still New.");
+                }
+            }
+
+            await _inquiryRepository.DeleteAsync(id);
+            return true;
+        }
+    }
+}
