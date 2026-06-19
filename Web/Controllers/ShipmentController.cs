@@ -1,13 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Jemar.Presentation.Authorization;
+using Jemar.Aplication.Exceptions;
 
 namespace Jemar.Presentation.Controllers
 {
@@ -54,7 +51,7 @@ namespace Jemar.Presentation.Controllers
 
                 return Ok(shipment);
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedException ex)
             {
                 return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
             }
@@ -68,9 +65,9 @@ namespace Jemar.Presentation.Controllers
             {
                 var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
                 var shipment = await _shipmentService.CreateAsync(request, userId);
-                return Ok(shipment);
+                return CreatedAtAction(nameof(GetById), new { id = shipment.Id }, shipment);
             }
-            catch (ArgumentException ex)
+            catch (UnauthorizedException ex)
             {
                 return BadRequest(ex.Message);
             }
@@ -91,7 +88,7 @@ namespace Jemar.Presentation.Controllers
 
                 return NoContent();
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedException ex)
             {
                 return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
             }
@@ -115,7 +112,7 @@ namespace Jemar.Presentation.Controllers
 
                 return NoContent();
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedException ex)
             {
                 return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
             }

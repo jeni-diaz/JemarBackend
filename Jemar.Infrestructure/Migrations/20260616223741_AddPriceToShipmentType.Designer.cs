@@ -4,6 +4,7 @@ using Jemar.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Jemar.Infrastructure.Migrations
 {
     [DbContext(typeof(JemarDbContext))]
-    partial class JemarDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260616223741_AddPriceToShipmentType")]
+    partial class AddPriceToShipmentType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -132,6 +135,9 @@ namespace Jemar.Infrastructure.Migrations
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedDateTime")
                         .HasColumnType("datetime2");
 
@@ -161,6 +167,9 @@ namespace Jemar.Infrastructure.Migrations
 
                     b.Property<int>("ShipmentTypeId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("UpdatedDateTime")
                         .HasColumnType("datetime2");

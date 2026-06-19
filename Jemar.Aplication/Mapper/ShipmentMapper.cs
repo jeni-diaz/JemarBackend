@@ -1,9 +1,7 @@
 ﻿using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
 using Jemar.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Jemar.Domain.Enums;
 
 namespace Jemar.Aplication.Mapper
 {
@@ -17,10 +15,10 @@ namespace Jemar.Aplication.Mapper
                 Origin = request.Origin,
                 Destination = request.Destination,
                 ShipmentTypeId = request.ShipmentTypeId,
-                ShipmentStatusId = 1,
+                ShipmentStatusId = (int)ShipmentStatusEnum.Pending,
                 ClientId = clientId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedDateTime = DateTime.UtcNow,
+                UpdatedDateTime = DateTime.UtcNow,
             };
         }
 

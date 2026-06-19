@@ -3,6 +3,6 @@
     public enum ShipmentTypeEnum
     {
         Express = 1,
-        Standar = 2
+        Standard = 2
     }
 }
