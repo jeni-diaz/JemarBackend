@@ -5,6 +5,7 @@ using Jemar.Infrastructure.Persistence;
 using Jemar.Infrastructure.Persistence.Repository;
 using Jemar.Presentation.Authorization;
 using Jemar.Presentation.Middleware;
+using Jemar.Presentation.Middlewares;
 using Jemar.Presentation.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -107,7 +108,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseAuthentication();
 
 app.UseMiddleware<RoleMiddleware>();

@@ -56,66 +56,25 @@ namespace Jemar.Infrastructure.Persistence
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Role>().HasData(
-                new Role
-                {
-                    Id = 1,
-                    Name = UserRole.Client,
-                    Description = "Client Role"
-                },
-                new Role
-                {
-                    Id = 2,
-                    Name = UserRole.Employee,
-                    Description = "Employee Role"
-                },
-                new Role
-                {
-                    Id = 3,
-                    Name = UserRole.SuperAdmin,
-                    Description = "Super Admin Role"
-                }
+                new Role { Id = 1, Name = UserRole.Client, Description = "Client Role" },
+                new Role { Id = 2, Name = UserRole.Employee, Description = "Employee Role" },
+                new Role { Id = 3, Name = UserRole.SuperAdmin, Description = "Super Admin Role" }
             );
 
             modelBuilder.Entity<ShipmentStatus>().HasData(
-                new ShipmentStatus
-                {
-                    Id = 1,
-                    Name = ShipmentStatusEnum.Pending,
-                    Description = "Shipment is pending"
-                },
-                new ShipmentStatus
-                {
-                    Id = 2,
-                    Name = ShipmentStatusEnum.In_transit,
-                    Description = "Shipment is in transit"
-                },
-                new ShipmentStatus
-                {
-                    Id = 3,
-                    Name = ShipmentStatusEnum.Delivered,
-                    Description = "Shipment has been delivered"
-                },
-                new ShipmentStatus
-                {
-                    Id = 4,
-                    Name = ShipmentStatusEnum.Cancelled,
-                    Description = "Shipment has been cancelled"
-                }
+                new ShipmentStatus { Id = 1, Name = ShipmentStatusEnum.Pending, Description = "Shipment is pending" },
+                new ShipmentStatus { Id = 2, Name = ShipmentStatusEnum.In_transit, Description = "Shipment is in transit" },
+                new ShipmentStatus { Id = 3, Name = ShipmentStatusEnum.Delivered, Description = "Shipment has been delivered" },
+                new ShipmentStatus { Id = 4, Name = ShipmentStatusEnum.Cancelled, Description = "Shipment has been cancelled" }
             );
 
+            modelBuilder.Entity<ShipmentType>()
+                .Property(s => s.Price)
+                .HasPrecision(18, 2);
+
             modelBuilder.Entity<ShipmentType>().HasData(
-                new ShipmentType
-                {
-                    Id = 1,
-                    Name = ShipmentTypeEnum.Express,
-                    Description = "Express shipment (24h)"
-                },
-                new ShipmentType
-                {
-                    Id = 2,
-                    Name = ShipmentTypeEnum.Standar,
-                    Description = "Standard shipment (3-5 days)"
-                }
+                new ShipmentType { Id = 1, Name = ShipmentTypeEnum.Express, Description = "Express shipment (24h)", Price = 3000.00m },
+                new ShipmentType { Id = 2, Name = ShipmentTypeEnum.Standard, Description = "Standard shipment (3-5 days)", Price = 1500.00m }
             );
         }
     }

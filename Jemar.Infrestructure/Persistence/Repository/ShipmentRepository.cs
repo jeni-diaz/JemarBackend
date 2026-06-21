@@ -1,10 +1,6 @@
-﻿using Jemar.Aplication.Abstractions.Infrastructure;
-using Jemar.Domain.Entities;
+﻿using Jemar.Domain.Entities;
+using Jemar.Aplication.Abstractions.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Jemar.Infrastructure.Persistence.Repository
 {
@@ -38,6 +34,11 @@ namespace Jemar.Infrastructure.Persistence.Repository
                 .Include(s => s.ShipmentStatus)
                 .Where(s => s.ClientId == clientId && !s.IsDeleted)
                 .ToListAsync();
+        }
+
+        public async Task<ShipmentType?> GetShipmentTypeByIdAsync(int id)
+        {
+            return await _context.ShipmentTypes.FindAsync(id);
         }
     }
 }
