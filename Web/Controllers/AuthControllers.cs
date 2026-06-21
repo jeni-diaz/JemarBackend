@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Requests;
@@ -20,14 +20,21 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
+        public async Task<ActionResult<AuthResponse>> Login(SignInRequest request)
         {
-            var response = await _authService.LoginAsync(request);
+            var response = await _authService.SignInAsync(request);
             if (response == null)
             {
-                return Unauthorized("Invalid email or password.");
+                return Unauthorized("Email o contraseña incorrectos.");
             }
 
+            return Ok(response);
+        }
+
+        [HttpPost("register")]
+        public async Task<ActionResult<AuthResponse>> Register(SignUpRequest request)
+        {
+            var response = await _authService.SignUpAsync(request);
             return Ok(response);
         }
     }

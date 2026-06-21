@@ -1,4 +1,4 @@
-﻿using Jemar.Aplication.Abstractions;
+using Jemar.Aplication.Abstractions;
 using Jemar.Domain.Entities;
 using Jemar.Domain.Enums;
 using Microsoft.Extensions.Configuration;
@@ -9,7 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace Jemar.Presentation.Services
+namespace Jemar.Infrastructure.Services
 {
     public class TokenService : ITokenService
     {
