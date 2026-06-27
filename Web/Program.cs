@@ -36,7 +36,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddDbContext<JemarDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var secret = builder.Configuration["Jwt:Secret"] ?? "a-la-grande-le-puse-cuca";
 if (secret.Length < 32)

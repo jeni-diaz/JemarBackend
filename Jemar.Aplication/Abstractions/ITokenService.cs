@@ -7,3 +7,5 @@ namespace Jemar.Aplication.Abstractions
         string GenerateToken(User user);
     }
 }
+
+
