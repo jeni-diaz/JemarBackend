@@ -8,7 +8,6 @@ using Jemar.Presentation.Authorization;
 using Jemar.Presentation.Middleware;
 using Jemar.Presentation.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
