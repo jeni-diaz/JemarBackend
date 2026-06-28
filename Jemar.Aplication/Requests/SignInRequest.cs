@@ -1,6 +1,6 @@
-﻿namespace Jemar.Aplication.Requests
+namespace Jemar.Aplication.Requests
 {
-    public class LoginRequest
+    public class SignInRequest
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;

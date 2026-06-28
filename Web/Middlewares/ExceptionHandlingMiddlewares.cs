@@ -1,6 +1,6 @@
-﻿using Jemar.Aplication.Exceptions;
-using System.ComponentModel.DataAnnotations;
+using Jemar.Aplication.Exceptions;
 using System.Text.Json;
+using AppValidationException = Jemar.Aplication.Exceptions.ValidationException;
 
 namespace Jemar.Presentation.Middlewares
 {
@@ -31,7 +31,7 @@ namespace Jemar.Presentation.Middlewares
         {
             var (statusCode, message) = exception switch
             {
-                ValidationException ex => (StatusCodes.Status400BadRequest, ex.Message),
+                AppValidationException ex => (StatusCodes.Status400BadRequest, ex.Message),
                 NotFoundException ex => (StatusCodes.Status404NotFound, ex.Message),
                 ConflictException ex => (StatusCodes.Status409Conflict, ex.Message),
                 UnauthorizedException ex => (StatusCodes.Status401Unauthorized, ex.Message),
@@ -39,7 +39,7 @@ namespace Jemar.Presentation.Middlewares
                 _ => (StatusCodes.Status500InternalServerError, "Ocurrió un error inesperado.")
             };
 
-            if (exception is not (ValidationException or NotFoundException or ConflictException or UnauthorizedException or DatabaseException))
+            if (exception is not (AppValidationException or NotFoundException or ConflictException or UnauthorizedException or DatabaseException))
                 _logger.LogError(exception, "Excepción no controlada: {Message}", exception.Message);
 
             context.Response.ContentType = "application/json";

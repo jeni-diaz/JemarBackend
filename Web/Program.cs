@@ -3,10 +3,10 @@ using Jemar.Aplication.Abstractions.Infrastructure;
 using Jemar.Aplication.Services;
 using Jemar.Infrastructure.Persistence;
 using Jemar.Infrastructure.Persistence.Repository;
+using Jemar.Infrastructure.Services;
 using Jemar.Presentation.Authorization;
 using Jemar.Presentation.Middleware;
 using Jemar.Presentation.Middlewares;
-using Jemar.Presentation.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -36,7 +36,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddDbContext<JemarDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var secret = builder.Configuration["Jwt:Secret"] ?? "a-la-grande-le-puse-cuca";
 if (secret.Length < 32)
