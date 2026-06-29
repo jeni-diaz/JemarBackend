@@ -4,6 +4,7 @@ using Jemar.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Jemar.Infrastructure.Migrations
 {
     [DbContext(typeof(JemarDbContext))]
-    partial class JemarDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260628234428_RemoveRedundantCreatedAt")]
+    partial class RemoveRedundantCreatedAt
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -126,10 +129,7 @@ namespace Jemar.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("CreatedByRoleId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("CreatedByUserId")
+                    b.Property<Guid>("ClientId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedDateTime")
@@ -142,11 +142,11 @@ namespace Jemar.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
-
-                    b.Property<Guid?>("OnBehalfOfClientId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Origin")
                         .IsRequired()
@@ -167,11 +167,9 @@ namespace Jemar.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedByRoleId");
+                    b.HasIndex("ClientId");
 
-                    b.HasIndex("CreatedByUserId");
-
-                    b.HasIndex("OnBehalfOfClientId");
+                    b.HasIndex("EmployeeId");
 
                     b.HasIndex("ShipmentStatusId");
 
@@ -333,21 +331,15 @@ namespace Jemar.Infrastructure.Migrations
 
             modelBuilder.Entity("Jemar.Domain.Entities.Shipment", b =>
                 {
-                    b.HasOne("Jemar.Domain.Entities.Role", "CreatedByRole")
-                        .WithMany()
-                        .HasForeignKey("CreatedByRoleId")
+                    b.HasOne("Jemar.Domain.Entities.User", "Client")
+                        .WithMany("Shipments")
+                        .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Jemar.Domain.Entities.User", "CreatedByUser")
-                        .WithMany("CreatedShipments")
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Jemar.Domain.Entities.User", "OnBehalfOfClient")
-                        .WithMany("OnBehalfShipments")
-                        .HasForeignKey("OnBehalfOfClientId")
+                    b.HasOne("Jemar.Domain.Entities.User", "Employee")
+                        .WithMany("AssignedShipments")
+                        .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Jemar.Domain.Entities.ShipmentStatus", "ShipmentStatus")
@@ -362,11 +354,9 @@ namespace Jemar.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("CreatedByRole");
+                    b.Navigation("Client");
 
-                    b.Navigation("CreatedByUser");
-
-                    b.Navigation("OnBehalfOfClient");
+                    b.Navigation("Employee");
 
                     b.Navigation("ShipmentStatus");
 
@@ -388,11 +378,11 @@ namespace Jemar.Infrastructure.Migrations
                 {
                     b.Navigation("AssignedInquiries");
 
-                    b.Navigation("CreatedShipments");
+                    b.Navigation("AssignedShipments");
 
                     b.Navigation("Inquiries");
 
-                    b.Navigation("OnBehalfShipments");
+                    b.Navigation("Shipments");
                 });
 #pragma warning restore 612, 618
         }

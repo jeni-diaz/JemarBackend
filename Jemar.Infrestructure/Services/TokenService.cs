@@ -25,9 +25,7 @@ namespace Jemar.Infrastructure.Services
             var secret = _config["Jwt:Secret"] ?? "a-la-grande-le-puse-cuca";
 
             if (secret.Length < 32)
-            {
                 secret = secret.PadRight(32, '!');
-            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

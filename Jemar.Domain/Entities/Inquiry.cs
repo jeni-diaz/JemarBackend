@@ -1,11 +1,9 @@
-﻿using System;
-using Jemar.Domain.Enums;
+﻿using Jemar.Domain.Enums;
 
 namespace Jemar.Domain.Entities
 {
     public class Inquiry : BaseEntity
     {
-        public DateTime CreatedAt { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;

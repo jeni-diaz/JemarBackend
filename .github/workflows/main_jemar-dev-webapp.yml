@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +25,13 @@ jobs:
 
       - name: Build with dotnet
         run: dotnet build Web/Jemar.Presentation.csproj --configuration Release
+
+      - name: Apply database migrations
+        run: |
+          dotnet tool install --global dotnet-ef
+          dotnet ef database update --project Jemar.Infrestructure/Jemar.Infrastructure.csproj --startup-project Web/Jemar.Presentation.csproj
+        env:
+          ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_CONNECTION_STRING }}
 
       - name: Publish with dotnet
         run: dotnet publish Web/Jemar.Presentation.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
@@ -39,15 +46,15 @@ jobs:
     runs-on: windows-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -62,4 +69,3 @@ jobs:
           app-name: 'jemar-dev-webapp'
           slot-name: 'Production'
           package: .
-          

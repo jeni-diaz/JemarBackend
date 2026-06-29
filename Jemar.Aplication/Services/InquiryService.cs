@@ -1,13 +1,11 @@
 using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Abstractions.Infrastructure;
+using Jemar.Aplication.Exceptions;
 using Jemar.Aplication.Mapper;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
 using Jemar.Domain.Entities;
 using Jemar.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Jemar.Aplication.Services
 {
@@ -45,7 +43,7 @@ namespace Jemar.Aplication.Services
 
             if (currentUserRole == UserRole.Client.ToString() && inquiry.ClientId != currentUserId)
             {
-                throw new UnauthorizedAccessException("You are not authorized to view this inquiry.");
+                throw new UnauthorizedAccessException("No tiene autorización para ver esta consulta.");
             }
 
             return inquiry.ToInquiryResponse();
@@ -55,14 +53,10 @@ namespace Jemar.Aplication.Services
         {
             var user = await _userRepository.GetByIdAsync(clientId);
             if (user == null)
-            {
-                throw new ArgumentException("Client not found.");
-            }
+                throw new NotFoundException("Cliente no encontrado.");
 
             if (user.RoleId != (int)UserRole.Client)
-            {
-                throw new ArgumentException("User is not a Client.");
-            }
+                throw new UnauthorizedException("Solo los clientes pueden crear consultas.");
 
             var inquiry = request.ToInquiry(user);
             var saved = await _inquiryRepository.AddAsync(inquiry);
@@ -88,14 +82,10 @@ namespace Jemar.Aplication.Services
             else if (currentUserRole == UserRole.Client.ToString())
             {
                 if (inquiry.ClientId != currentUserId)
-                {
-                    throw new UnauthorizedAccessException("You are not authorized to respond to this inquiry.");
-                }
+                    throw new UnauthorizedAccessException("No está autorizado para responder a esta consulta.");
 
                 if (inquiry.Status != InquiryStatusEnum.Answered)
-                {
-                    throw new ArgumentException("You can only respond to inquiries that have been answered by our staff.");
-                }
+                    throw new ArgumentException("Solo puede responder a las consultas que hayan sido atendidas por nuestro personal.");
 
                 inquiry.ClientReply = request.Message;
                 inquiry.Status = InquiryStatusEnum.InProgress;
@@ -130,14 +120,10 @@ namespace Jemar.Aplication.Services
             if (currentUserRole == UserRole.Client.ToString())
             {
                 if (inquiry.ClientId != currentUserId)
-                {
-                    throw new UnauthorizedAccessException("You are not authorized to delete this inquiry.");
-                }
+                    throw new UnauthorizedAccessException("No tiene autorización para eliminar esta consulta.");
 
                 if (inquiry.Status != InquiryStatusEnum.New)
-                {
-                    throw new ArgumentException("Clients can only delete inquiries that are still New.");
-                }
+                    throw new ArgumentException("Los clientes solo pueden eliminar consultas que aún no han sido respondidas.");
             }
 
             await _inquiryRepository.DeleteAsync(id);

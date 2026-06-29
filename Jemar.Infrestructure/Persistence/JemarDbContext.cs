@@ -9,7 +9,6 @@ namespace Jemar.Infrastructure.Persistence
         public JemarDbContext(DbContextOptions<JemarDbContext> options) : base(options)
         {
         }
-
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<Shipment> Shipments { get; set; }
@@ -28,15 +27,21 @@ namespace Jemar.Infrastructure.Persistence
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Shipment>()
-                .HasOne(s => s.Client)
-                .WithMany(u => u.Shipments)
-                .HasForeignKey(s => s.ClientId)
+                .HasOne(s => s.CreatedByUser)
+                .WithMany(u => u.CreatedShipments)
+                .HasForeignKey(s => s.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Shipment>()
-                .HasOne(s => s.Employee)
-                .WithMany(u => u.AssignedShipments)
-                .HasForeignKey(s => s.EmployeeId)
+                .HasOne(s => s.OnBehalfOfClient)
+                .WithMany(u => u.OnBehalfShipments)
+                .HasForeignKey(s => s.OnBehalfOfClientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Shipment>()
+                .HasOne(s => s.CreatedByRole)
+                .WithMany()
+                .HasForeignKey(s => s.CreatedByRoleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Shipment>()

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Jemar.Domain.Entities;
+﻿using Jemar.Domain.Entities;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
 using Jemar.Domain.Enums;
@@ -15,7 +12,6 @@ namespace Jemar.Aplication.Mapper
             return new Inquiry
             {
                 Id = Guid.NewGuid(),
-                CreatedAt = DateTime.UtcNow,
                 FirstName = client.FirstName,
                 LastName = client.LastName,
                 Email = client.Email,
@@ -38,7 +34,7 @@ namespace Jemar.Aplication.Mapper
                 Response = inquiry.Response,
                 ClientReply = inquiry.ClientReply,
                 Status = inquiry.Status.ToString(),
-                CreatedAt = inquiry.CreatedAt
+                CreatedAt = inquiry.CreatedDateTime // Mapeamos usando CreatedDateTime de BaseEntity
             };
         }
 
