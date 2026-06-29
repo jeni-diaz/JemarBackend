@@ -5,36 +5,36 @@
 namespace Jemar.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class FixSeedData : Migration
+    public partial class FixShipmentColumns : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_Shipments_Users_UserId",
+                name: "FK_Shipments_Users_ClientId",
                 table: "Shipments");
 
             migrationBuilder.DropForeignKey(
-                name: "FK_Shipments_Users_UserId1",
+                name: "FK_Shipments_Users_EmployeeId",
                 table: "Shipments");
 
             migrationBuilder.RenameColumn(
-                name: "UserId1",
+                name: "EmployeeId",
                 table: "Shipments",
                 newName: "OnBehalfOfClientId");
 
             migrationBuilder.RenameColumn(
-                name: "UserId",
+                name: "ClientId",
                 table: "Shipments",
                 newName: "CreatedByUserId");
 
             migrationBuilder.RenameIndex(
-                name: "IX_Shipments_UserId1",
+                name: "IX_Shipments_EmployeeId",
                 table: "Shipments",
                 newName: "IX_Shipments_OnBehalfOfClientId");
 
             migrationBuilder.RenameIndex(
-                name: "IX_Shipments_UserId",
+                name: "IX_Shipments_ClientId",
                 table: "Shipments",
                 newName: "IX_Shipments_CreatedByUserId");
 
@@ -101,35 +101,35 @@ namespace Jemar.Infrastructure.Migrations
             migrationBuilder.RenameColumn(
                 name: "OnBehalfOfClientId",
                 table: "Shipments",
-                newName: "UserId1");
+                newName: "EmployeeId");
 
             migrationBuilder.RenameColumn(
                 name: "CreatedByUserId",
                 table: "Shipments",
-                newName: "UserId");
+                newName: "ClientId");
 
             migrationBuilder.RenameIndex(
                 name: "IX_Shipments_OnBehalfOfClientId",
                 table: "Shipments",
-                newName: "IX_Shipments_UserId1");
+                newName: "IX_Shipments_EmployeeId");
 
             migrationBuilder.RenameIndex(
                 name: "IX_Shipments_CreatedByUserId",
                 table: "Shipments",
-                newName: "IX_Shipments_UserId");
+                newName: "IX_Shipments_ClientId");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Shipments_Users_UserId",
+                name: "FK_Shipments_Users_ClientId",
                 table: "Shipments",
-                column: "UserId",
+                column: "ClientId",
                 principalTable: "Users",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Shipments_Users_UserId1",
+                name: "FK_Shipments_Users_EmployeeId",
                 table: "Shipments",
-                column: "UserId1",
+                column: "EmployeeId",
                 principalTable: "Users",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Restrict);

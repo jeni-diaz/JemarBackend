@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Jemar.Infrastructure.Migrations
 {
     [DbContext(typeof(JemarDbContext))]
-    [Migration("20260629010530_FixSeedData")]
-    partial class FixSeedData
+    [Migration("20260629021007_FixShipmentColumns")]
+    partial class FixShipmentColumns
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
