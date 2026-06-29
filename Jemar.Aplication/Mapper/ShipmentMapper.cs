@@ -7,7 +7,7 @@ namespace Jemar.Aplication.Mapper
 {
     public static class ShipmentMapper
     {
-        public static Shipment ToShipment(this CreateShipmentRequest request, Guid clientId)
+        public static Shipment ToShipment(this CreateShipmentRequest request, Guid createdByUserId, int createdByRoleId)
         {
             return new Shipment
             {
@@ -16,7 +16,9 @@ namespace Jemar.Aplication.Mapper
                 Destination = request.Destination,
                 ShipmentTypeId = request.ShipmentTypeId,
                 ShipmentStatusId = (int)ShipmentStatusEnum.Pending,
-                ClientId = clientId,
+                CreatedByUserId = createdByUserId,
+                CreatedByRoleId = createdByRoleId,
+                OnBehalfOfClientId = request.OnBehalfOfClientId,
                 CreatedDateTime = DateTime.UtcNow,
                 UpdatedDateTime = DateTime.UtcNow,
             };
@@ -31,7 +33,12 @@ namespace Jemar.Aplication.Mapper
                 Destination = shipment.Destination,
                 Price = shipment.Price,
                 ShipmentType = shipment.ShipmentType?.Name.ToString() ?? string.Empty,
-                ShipmentStatus = shipment.ShipmentStatus?.Name.ToString() ?? string.Empty
+                ShipmentStatus = shipment.ShipmentStatus?.Name.ToString() ?? string.Empty,
+                CreatedByUserId = shipment.CreatedByUserId,
+                CreatedByRoleId = shipment.CreatedByRoleId,
+                OnBehalfOfClientId = shipment.OnBehalfOfClientId,
+                CreatedDateTime = shipment.CreatedDateTime,
+                UpdatedDateTime = shipment.UpdatedDateTime
             };
         }
 

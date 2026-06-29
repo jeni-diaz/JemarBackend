@@ -4,14 +4,10 @@ using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
 using Jemar.Presentation.Authorization;
-using Jemar.Aplication.Exceptions;
 
 namespace Jemar.Presentation.Controllers
 {
-    // Indica que esta clase es un controlador de API REST
     [ApiController]
-
-    // Define la ruta base: api/shipment
     [Route("api/[controller]")]
     [Authorize]
     public class ShipmentController : ControllerBase
@@ -23,8 +19,6 @@ namespace Jemar.Presentation.Controllers
             _shipmentService = shipmentService;
         }
 
-
-        // GET: api/shipment. Obtiene todos los envíos permitidos para el usuario
         [HttpGet]
         public async Task<ActionResult<List<ShipmentResponse>>> GetAll()
         {
@@ -35,91 +29,54 @@ namespace Jemar.Presentation.Controllers
             return Ok(shipments);
         }
 
-
-        // GET: api/shipment/{id}. Obtiene un envío específico por ID
         [HttpGet("{id}")]
         public async Task<ActionResult<ShipmentResponse>> GetById(Guid id)
         {
-            try
-            {
-                var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
-                var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
 
-                var shipment = await _shipmentService.GetByIdAsync(id, userId, role);
-                if (shipment == null)
-                    return NotFound();
+            var shipment = await _shipmentService.GetByIdAsync(id, userId, role);
+            if (shipment == null)
+                return NotFound();
 
-                return Ok(shipment);
-            }
-            catch (UnauthorizedException ex)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
-            }
+            return Ok(shipment);
         }
 
-        // POST: api/shipment. Crea un nuevo envío
         [HttpPost]
         public async Task<ActionResult<ShipmentResponse>> Create(CreateShipmentRequest request)
         {
-            try
-            {
-                var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
-                var shipment = await _shipmentService.CreateAsync(request, userId);
-                return CreatedAtAction(nameof(GetById), new { id = shipment.Id }, shipment);
-            }
-            catch (UnauthorizedException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
+
+            var shipment = await _shipmentService.CreateAsync(request, userId, role);
+            return CreatedAtAction(nameof(GetById), new { id = shipment.Id }, shipment);
         }
 
         [HttpPut("{id}/status")]
         [Authorize(Policy = Policies.EmployeeOrAbove)]
         public async Task<IActionResult> UpdateStatus(Guid id, UpdateShipmentRequest request)
         {
-            try
-            {
-                var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
-                var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
 
-                var result = await _shipmentService.UpdateStatusAsync(id, request, userId, role);
-                if (!result)
-                    return NotFound("Shipment not found.");
+            var result = await _shipmentService.UpdateStatusAsync(id, request, userId, role);
+            if (!result)
+                return NotFound("Shipment not found.");
 
-                return NoContent();
-            }
-            catch (UnauthorizedException ex)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            try
-            {
-                var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
-                var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
 
-                var result = await _shipmentService.DeleteAsync(id, userId, role);
-                if (!result)
-                    return NotFound("Shipment not found.");
+            var result = await _shipmentService.DeleteAsync(id, userId, role);
+            if (!result)
+                return NotFound("Shipment not found.");
 
-                return NoContent();
-            }
-            catch (UnauthorizedException ex)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return NoContent();
         }
     }
 }

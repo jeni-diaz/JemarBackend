@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Jemar.Aplication.Requests
 {
@@ -15,5 +16,6 @@ namespace Jemar.Aplication.Requests
         [Required(ErrorMessage = "Shipment type is required.")]
         [Range(1, int.MaxValue, ErrorMessage = "Invalid shipment type ID.")]
         public int ShipmentTypeId { get; set; }
+        public Guid? OnBehalfOfClientId { get; set; }
     }
 }

@@ -41,30 +41,57 @@ namespace Jemar.Aplication.Services
             if (shipment == null)
                 return null;
 
-            if (currentUserRole == UserRole.Client.ToString() && shipment.ClientId != currentUserId)
+            if (currentUserRole == UserRole.Client.ToString() &&
+                shipment.CreatedByUserId != currentUserId &&
+                shipment.OnBehalfOfClientId != currentUserId)
             {
-                throw new UnauthorizedException("You are not authorized to view this shipment.");
+                throw new UnauthorizedAccessException("No tiene autorización para ver este envío.");
             }
 
             return shipment.ToShipmentResponse();
         }
 
-        public async Task<ShipmentResponse> CreateAsync(CreateShipmentRequest request, Guid clientId)
+        public async Task<ShipmentResponse> CreateAsync(CreateShipmentRequest request, Guid currentUserId, string currentUserRole)
         {
             var sugerenciasOrigen = await _openStreetMapService.AutocompletarDireccionAsync(request.Origin);
             if (sugerenciasOrigen == null || !sugerenciasOrigen.Any())
-                throw new UnauthorizedException($"The origin address '{request.Origin}' is not valid in Argentina.");
+                throw new ValidationException($"La dirección de origen '{request.Origin}' no es válida en Argentina.");
 
             var sugerenciasDestino = await _openStreetMapService.AutocompletarDireccionAsync(request.Destination);
             if (sugerenciasDestino == null || !sugerenciasDestino.Any())
-                throw new UnauthorizedException($"The destination address '{request.Destination}' is not valid in Argentina.")
-;
+                throw new ValidationException($"La dirección de destino '{request.Destination}' no es válida en Argentina.");
 
             var shipmentType = await _shipmentRepository.GetShipmentTypeByIdAsync(request.ShipmentTypeId);
             if (shipmentType == null)
-                throw new UnauthorizedException("Invalid Shipment Type ID.");
+                throw new ValidationException("ID de tipo de envío no válido.");
 
-            var shipment = request.ToShipment(clientId);
+            int createdByRoleId = 0;
+            if (currentUserRole == UserRole.SuperAdmin.ToString())
+            {
+                createdByRoleId = (int)UserRole.SuperAdmin;
+            }
+            else if (currentUserRole == UserRole.Employee.ToString())
+            {
+                createdByRoleId = (int)UserRole.Employee;
+            }
+            else
+            {
+                createdByRoleId = (int)UserRole.Client;
+            }
+
+            if (createdByRoleId == (int)UserRole.Client)
+            {
+                request.OnBehalfOfClientId = null;
+            }
+            else
+            {
+                if (request.OnBehalfOfClientId == null || request.OnBehalfOfClientId == Guid.Empty)
+                {
+                    throw new ValidationException("El empleado debe especificar para qué cliente se crea este envío.");
+                }
+            }
+
+            var shipment = request.ToShipment(currentUserId, createdByRoleId);
             shipment.Origin = sugerenciasOrigen.First();
             shipment.Destination = sugerenciasDestino.First();
             shipment.Price = shipmentType.Price;
@@ -77,7 +104,7 @@ namespace Jemar.Aplication.Services
         public async Task<bool> UpdateStatusAsync(Guid id, UpdateShipmentRequest request, Guid currentUserId, string currentUserRole)
         {
             if (currentUserRole == UserRole.Client.ToString())
-                throw new UnauthorizedAccessException("Clients are not authorized to update shipment status.");
+                throw new UnauthorizedAccessException("Los clientes no están autorizados a actualizar el estado del envío.");
 
             var shipment = await _shipmentRepository.GetByIdAsync(id);
             if (shipment == null)
@@ -89,25 +116,24 @@ namespace Jemar.Aplication.Services
             if (currentStatus == (int)ShipmentStatusEnum.Pending)
             {
                 if (nextStatus != (int)ShipmentStatusEnum.In_transit && nextStatus != (int)ShipmentStatusEnum.Cancelled)
-                    throw new UnauthorizedException("Pending shipment can only transition to In Transit or Cancelled.");
+                    throw new ValidationException("Un envío pendiente solo puede pasar al estado En tránsito o Cancelado.");
             }
             else if (currentStatus == (int)ShipmentStatusEnum.In_transit)
             {
                 if (nextStatus != (int)ShipmentStatusEnum.Delivered && nextStatus != (int)ShipmentStatusEnum.Cancelled)
-                    throw new UnauthorizedException("In Transit shipment can only transition to Delivered or Cancelled.");
+                    throw new ValidationException("Un envío En tránsito solo puede pasar al estado de Entregado o Cancelado.");
             }
             else if (currentStatus == (int)ShipmentStatusEnum.Delivered)
             {
-                throw new UnauthorizedException("Delivered shipment status cannot be modified.");
+                throw new ValidationException("No se puede modificar el estado de un envío Entregado.");
             }
             else if (currentStatus == (int)ShipmentStatusEnum.Cancelled)
             {
-                throw new UnauthorizedException("Cancelled shipment status cannot be modified.");
+                throw new ValidationException("El estado de un envío Cancelado no se puede modificar.");
             }
 
             shipment.ShipmentStatusId = nextStatus;
             shipment.UpdatedDateTime = DateTime.UtcNow;
-            shipment.EmployeeId = currentUserId;
 
             await _shipmentRepository.UpdateAsync(shipment);
             return true;
@@ -121,11 +147,14 @@ namespace Jemar.Aplication.Services
 
             if (currentUserRole == UserRole.Client.ToString())
             {
-                if (shipment.ClientId != currentUserId)
-                    throw new UnauthorizedException("You are not authorized to delete this shipment.");
+                if (shipment.CreatedByUserId != currentUserId &&
+                    shipment.OnBehalfOfClientId != currentUserId)
+                {
+                    throw new UnauthorizedAccessException("No tiene autorización para eliminar este envío.");
+                }
 
                 if (shipment.ShipmentStatusId != (int)ShipmentStatusEnum.Pending)
-                    throw new UnauthorizedException("Clients can only delete shipments that are still Pending.");
+                    throw new ValidationException("Los clientes solo pueden eliminar los envíos que aún están pendientes.");
             }
 
             await _shipmentRepository.DeleteAsync(id);

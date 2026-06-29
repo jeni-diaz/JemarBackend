@@ -42,7 +42,6 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost]
-        [AllowAnonymous]
         public async Task<ActionResult<UserResponse>> Create(CreateUserRequest request)
         {
             var user = await _userService.CreateAsync(request);

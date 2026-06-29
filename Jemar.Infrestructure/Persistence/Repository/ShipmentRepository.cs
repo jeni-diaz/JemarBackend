@@ -32,7 +32,7 @@ namespace Jemar.Infrastructure.Persistence.Repository
             return await _context.Shipments
                 .Include(s => s.ShipmentType)
                 .Include(s => s.ShipmentStatus)
-                .Where(s => s.ClientId == clientId && !s.IsDeleted)
+                .Where(s => (s.CreatedByUserId == clientId || s.OnBehalfOfClientId == clientId) && !s.IsDeleted)
                 .ToListAsync();
         }
 

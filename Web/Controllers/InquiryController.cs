@@ -1,12 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Jemar.Presentation.Authorization;
 
 namespace Jemar.Presentation.Controllers
 {
@@ -35,64 +32,39 @@ namespace Jemar.Presentation.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<InquiryResponse>> GetById(Guid id)
         {
-            try
-            {
-                var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
-                var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
 
-                var inquiry = await _inquiryService.GetByIdAsync(id, userId, role);
-                if (inquiry == null)
-                    return NotFound();
+            var inquiry = await _inquiryService.GetByIdAsync(id, userId, role);
+            if (inquiry == null)
+                return NotFound();
 
-                return Ok(inquiry);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
-            }
+            return Ok(inquiry);
         }
 
         [HttpPost]
         public async Task<ActionResult<InquiryResponse>> Create(CreateInquiryRequest request)
         {
-            try
-            {
-                var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
-                var inquiry = await _inquiryService.CreateAsync(request, userId);
-                return Ok(inquiry);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var inquiry = await _inquiryService.CreateAsync(request, userId);
+            return Ok(inquiry);
         }
 
         [HttpPut("{id}/respond")]
         public async Task<IActionResult> Respond(Guid id, RespondInquiryRequest request)
         {
-            try
-            {
-                var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
-                var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
 
-                var result = await _inquiryService.RespondAsync(id, request, userId, role);
-                if (!result)
-                    return NotFound("Inquiry not found.");
+            var result = await _inquiryService.RespondAsync(id, request, userId, role);
+            if (!result)
+                return NotFound("Inquiry not found.");
 
-                return NoContent();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return NoContent();
         }
 
         [HttpPut("{id}/close")]
-        [Authorize(Policy = "EmployeeOrAbove")]
+        [Authorize(Policy = Policies.EmployeeOrAbove)]
         public async Task<IActionResult> Close(Guid id)
         {
             var result = await _inquiryService.CloseAsync(id);
@@ -105,25 +77,14 @@ namespace Jemar.Presentation.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            try
-            {
-                var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
-                var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
 
-                var result = await _inquiryService.DeleteAsync(id, userId, role);
-                if (!result)
-                    return NotFound("Inquiry not found.");
+            var result = await _inquiryService.DeleteAsync(id, userId, role);
+            if (!result)
+                return NotFound("Inquiry not found.");
 
-                return NoContent();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return NoContent();
         }
     }
 }
