@@ -29,6 +29,7 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\""
     });
+
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
         { new OpenApiSecuritySchemeReference("Bearer", document), [] }
@@ -39,11 +40,20 @@ builder.Services.AddDbContext<JemarDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
-var secret = builder.Configuration["Jwt:Secret"] ?? "a-la-grande-le-puse-cuca";
+var secret = builder.Configuration["Jwt:Secret"]
+    ?? throw new InvalidOperationException("La configuración 'Jwt:Secret' no existe.");
+
+var issuer = builder.Configuration["Jwt:Issuer"]
+    ?? throw new InvalidOperationException("La configuración 'Jwt:Issuer' no existe.");
+
+var audience = builder.Configuration["Jwt:Audience"]
+    ?? throw new InvalidOperationException("La configuración 'Jwt:Audience' no existe.");
+
 if (secret.Length < 32)
 {
     secret = secret.PadRight(32, '!');
 }
+
 var key = Encoding.UTF8.GetBytes(secret);
 
 builder.Services.AddAuthentication(options =>
@@ -55,14 +65,18 @@ builder.Services.AddAuthentication(options =>
 {
     options.RequireHttpsMetadata = false;
     options.SaveToken = true;
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
+
         ValidateIssuer = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "JemarApi",
+        ValidIssuer = issuer,
+
         ValidateAudience = true,
-        ValidAudience = builder.Configuration["Jwt:Audience"] ?? "JemarClients",
+        ValidAudience = audience,
+
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
@@ -86,7 +100,6 @@ builder.Services.AddHttpClient<IOpenStreetMapService, OpenStreetMapService>(clie
     client.DefaultRequestHeaders.Add("User-Agent", "JemarEnviosApp/1.0 (contacto@tu-correo.com)");
 });
 
-
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
@@ -101,13 +114,14 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 
 var app = builder.Build();
 
-
 app.MapOpenApi();
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseAuthentication();
 
 app.UseMiddleware<RoleMiddleware>();
