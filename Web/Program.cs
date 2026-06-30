@@ -1,3 +1,6 @@
+﻿using System.Net;
+using Microsoft.Extensions.Http.Resilience;
+using Polly;
 using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Abstractions.Infrastructure;
 using Jemar.Aplication.Services;
@@ -29,6 +32,7 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\""
     });
+
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
         { new OpenApiSecuritySchemeReference("Bearer", document), [] }
@@ -39,11 +43,20 @@ builder.Services.AddDbContext<JemarDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
-var secret = builder.Configuration["Jwt:Secret"] ?? "a-la-grande-le-puse-cuca";
+var secret = builder.Configuration["Jwt:Secret"]
+    ?? throw new InvalidOperationException("La configuraci�n 'Jwt:Secret' no existe.");
+
+var issuer = builder.Configuration["Jwt:Issuer"]
+    ?? throw new InvalidOperationException("La configuraci�n 'Jwt:Issuer' no existe.");
+
+var audience = builder.Configuration["Jwt:Audience"]
+    ?? throw new InvalidOperationException("La configuraci�n 'Jwt:Audience' no existe.");
+
 if (secret.Length < 32)
 {
     secret = secret.PadRight(32, '!');
 }
+
 var key = Encoding.UTF8.GetBytes(secret);
 
 builder.Services.AddAuthentication(options =>
@@ -55,14 +68,18 @@ builder.Services.AddAuthentication(options =>
 {
     options.RequireHttpsMetadata = false;
     options.SaveToken = true;
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
+
         ValidateIssuer = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "JemarApi",
+        ValidIssuer = issuer,
+
         ValidateAudience = true,
-        ValidAudience = builder.Configuration["Jwt:Audience"] ?? "JemarClients",
+        ValidAudience = audience,
+
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
@@ -84,9 +101,71 @@ builder.Services.AddHttpClient<IOpenStreetMapService, OpenStreetMapService>(clie
 {
     client.BaseAddress = new Uri("https://nominatim.openstreetmap.org");
     client.DefaultRequestHeaders.Add("User-Agent", "JemarEnviosApp/1.0 (contacto@tu-correo.com)");
+    client.Timeout = TimeSpan.FromSeconds(10);
+})
+.AddResilienceHandler("nominatim-resilience", (pipeline, context) =>
+{
+    var logger = context.ServiceProvider.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("Nominatim.Resilience");
+
+    pipeline.AddRetry(new HttpRetryStrategyOptions
+    {
+        MaxRetryAttempts = 3,
+        Delay            = TimeSpan.FromSeconds(2),
+        BackoffType      = DelayBackoffType.Exponential,
+        UseJitter        = true,
+        ShouldHandle     = args => args.Outcome switch
+        {
+            { Exception: HttpRequestException }                          => PredicateResult.True(),
+            { Exception: TaskCanceledException }                         => PredicateResult.True(),
+            { Result.StatusCode: >= HttpStatusCode.InternalServerError } => PredicateResult.True(),
+            { Result.StatusCode: HttpStatusCode.TooManyRequests }        => PredicateResult.True(),
+            _                                                            => PredicateResult.False()
+        },
+        OnRetry = args =>
+        {
+            logger.LogWarning(
+                "[Nominatim] Reintento #{Attempt} - motivo: {Outcome}",
+                args.AttemptNumber + 1,
+                args.Outcome.Exception?.Message ?? args.Outcome.Result?.StatusCode.ToString()
+            );
+            return ValueTask.CompletedTask;
+        }
+    });
+
+    pipeline.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
+    {
+        SamplingDuration  = TimeSpan.FromSeconds(60),
+        FailureRatio      = 0.5,
+        MinimumThroughput = 5,
+        BreakDuration     = TimeSpan.FromSeconds(30),
+        ShouldHandle      = args => args.Outcome switch
+        {
+            { Exception: HttpRequestException }                          => PredicateResult.True(),
+            { Exception: TaskCanceledException }                         => PredicateResult.True(),
+            { Result.StatusCode: >= HttpStatusCode.InternalServerError } => PredicateResult.True(),
+            _                                                            => PredicateResult.False()
+        },
+        OnOpened = args =>
+        {
+            logger.LogError(
+                "[Nominatim] Circuito ABIERTO por {Duration}s - demasiados errores consecutivos.",
+                args.BreakDuration.TotalSeconds
+            );
+            return ValueTask.CompletedTask;
+        },
+        OnClosed = args =>
+        {
+            logger.LogInformation("[Nominatim] Circuito CERRADO - servicio recuperado.");
+            return ValueTask.CompletedTask;
+        },
+        OnHalfOpened = args =>
+        {
+            logger.LogInformation("[Nominatim] Circuito SEMI-ABIERTO - probando recuperacion.");
+            return ValueTask.CompletedTask;
+        }
+    });
 });
-
-
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
@@ -101,13 +180,14 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 
 var app = builder.Build();
 
-
 app.MapOpenApi();
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseAuthentication();
 
 app.UseMiddleware<RoleMiddleware>();
