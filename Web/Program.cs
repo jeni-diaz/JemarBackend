@@ -1,3 +1,6 @@
+ï»¿using System.Net;
+using Microsoft.Extensions.Http.Resilience;
+using Polly;
 using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Abstractions.Infrastructure;
 using Jemar.Aplication.Services;
@@ -41,13 +44,13 @@ builder.Services.AddDbContext<JemarDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var secret = builder.Configuration["Jwt:Secret"]
-    ?? throw new InvalidOperationException("La configuración 'Jwt:Secret' no existe.");
+    ?? throw new InvalidOperationException("La configuraciï¿½n 'Jwt:Secret' no existe.");
 
 var issuer = builder.Configuration["Jwt:Issuer"]
-    ?? throw new InvalidOperationException("La configuración 'Jwt:Issuer' no existe.");
+    ?? throw new InvalidOperationException("La configuraciï¿½n 'Jwt:Issuer' no existe.");
 
 var audience = builder.Configuration["Jwt:Audience"]
-    ?? throw new InvalidOperationException("La configuración 'Jwt:Audience' no existe.");
+    ?? throw new InvalidOperationException("La configuraciï¿½n 'Jwt:Audience' no existe.");
 
 if (secret.Length < 32)
 {
@@ -98,8 +101,71 @@ builder.Services.AddHttpClient<IOpenStreetMapService, OpenStreetMapService>(clie
 {
     client.BaseAddress = new Uri("https://nominatim.openstreetmap.org");
     client.DefaultRequestHeaders.Add("User-Agent", "JemarEnviosApp/1.0 (contacto@tu-correo.com)");
-});
+    client.Timeout = TimeSpan.FromSeconds(10);
+})
+.AddResilienceHandler("nominatim-resilience", (pipeline, context) =>
+{
+    var logger = context.ServiceProvider.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("Nominatim.Resilience");
 
+    pipeline.AddRetry(new HttpRetryStrategyOptions
+    {
+        MaxRetryAttempts = 3,
+        Delay            = TimeSpan.FromSeconds(2),
+        BackoffType      = DelayBackoffType.Exponential,
+        UseJitter        = true,
+        ShouldHandle     = args => args.Outcome switch
+        {
+            { Exception: HttpRequestException }                          => PredicateResult.True(),
+            { Exception: TaskCanceledException }                         => PredicateResult.True(),
+            { Result.StatusCode: >= HttpStatusCode.InternalServerError } => PredicateResult.True(),
+            { Result.StatusCode: HttpStatusCode.TooManyRequests }        => PredicateResult.True(),
+            _                                                            => PredicateResult.False()
+        },
+        OnRetry = args =>
+        {
+            logger.LogWarning(
+                "[Nominatim] Reintento #{Attempt} - motivo: {Outcome}",
+                args.AttemptNumber + 1,
+                args.Outcome.Exception?.Message ?? args.Outcome.Result?.StatusCode.ToString()
+            );
+            return ValueTask.CompletedTask;
+        }
+    });
+
+    pipeline.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
+    {
+        SamplingDuration  = TimeSpan.FromSeconds(60),
+        FailureRatio      = 0.5,
+        MinimumThroughput = 5,
+        BreakDuration     = TimeSpan.FromSeconds(30),
+        ShouldHandle      = args => args.Outcome switch
+        {
+            { Exception: HttpRequestException }                          => PredicateResult.True(),
+            { Exception: TaskCanceledException }                         => PredicateResult.True(),
+            { Result.StatusCode: >= HttpStatusCode.InternalServerError } => PredicateResult.True(),
+            _                                                            => PredicateResult.False()
+        },
+        OnOpened = args =>
+        {
+            logger.LogError(
+                "[Nominatim] Circuito ABIERTO por {Duration}s - demasiados errores consecutivos.",
+                args.BreakDuration.TotalSeconds
+            );
+            return ValueTask.CompletedTask;
+        },
+        OnClosed = args =>
+        {
+            logger.LogInformation("[Nominatim] Circuito CERRADO - servicio recuperado.");
+            return ValueTask.CompletedTask;
+        },
+        OnHalfOpened = args =>
+        {
+            logger.LogInformation("[Nominatim] Circuito SEMI-ABIERTO - probando recuperacion.");
+            return ValueTask.CompletedTask;
+        }
+    });
+});
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();

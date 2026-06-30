@@ -3,8 +3,6 @@ using Jemar.Domain.Entities;
 using Jemar.Domain.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -22,7 +20,21 @@ namespace Jemar.Infrastructure.Services
 
         public string GenerateToken(User user)
         {
-            var secret = _config["Jwt:Secret"] ?? "a-la-grande-le-puse-cuca";
+            var secret = _config["Jwt:Secret"]
+                ?? throw new InvalidOperationException("La configuración 'Jwt:Secret' no existe.");
+
+            var issuer = _config["Jwt:Issuer"]
+                ?? throw new InvalidOperationException("La configuración 'Jwt:Issuer' no existe.");
+
+            var audience = _config["Jwt:Audience"]
+                ?? throw new InvalidOperationException("La configuración 'Jwt:Audience' no existe.");
+
+            var expirationHoursValue = _config["Jwt:ExpirationHours"] ?? "8";
+
+            if (!double.TryParse(expirationHoursValue, out var expirationHours))
+            {
+                expirationHours = 8;
+            }
 
             if (secret.Length < 32)
             {
@@ -43,15 +55,11 @@ namespace Jemar.Infrastructure.Services
                 new Claim("role", user.Role?.Name.ToString() ?? ((UserRole)user.RoleId).ToString())
             };
 
-            var expirationHoursVal = _config["Jwt:ExpirationHours"] ?? "8";
-            double.TryParse(expirationHoursVal, out var expHours);
-            if (expHours <= 0) expHours = 8;
-
             var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"] ?? "JemarApi",
-                audience: _config["Jwt:Audience"] ?? "JemarClients",
+                issuer: issuer,
+                audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(expHours),
+                expires: DateTime.UtcNow.AddHours(expirationHours),
                 signingCredentials: creds
             );
 
