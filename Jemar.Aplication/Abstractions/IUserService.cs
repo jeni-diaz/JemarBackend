@@ -9,8 +9,8 @@ namespace Jemar.Aplication.Abstractions
     public interface IUserService
     {
         Task<List<UserResponse>> GetAllAsync();
-        Task<UserResponse?> GetByIdAsync(Guid id);
+        Task<UserResponse?> GetByEmailAsync(string email);
         Task<UserResponse> CreateAsync(CreateUserRequest request);
-        Task<bool> UpdateRoleAsync(Guid userId, UpdateUserRoleRequest request);
+        Task<bool> UpdateRoleAsync(UpdateUserRoleRequest request);
     }
 }

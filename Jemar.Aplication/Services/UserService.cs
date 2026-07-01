@@ -24,11 +24,18 @@ namespace Jemar.Aplication.Services
             return users.ToUserResponseList();
         }
 
-        public async Task<UserResponse?> GetByIdAsync(Guid id)
+        public async Task<UserResponse?> GetByEmailAsync(string email)
         {
-            var user = await _userRepository.GetByIdAsync(id);
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ValidationException("El email es requerido.");
+
+            if (!Regex.IsMatch(email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                throw new ValidationException("El email no tiene un formato válido.");
+
+            var user = await _userRepository.GetByEmailAsync(email.Trim());
+
             if (user == null)
-                return null;
+                throw new NotFoundException("No existe un usuario con ese email.");
 
             return user.ToUserResponse();
         }
@@ -74,19 +81,27 @@ namespace Jemar.Aplication.Services
             return saved.ToUserResponse();
         }
 
-        public async Task<bool> UpdateRoleAsync(Guid userId, UpdateUserRoleRequest request)
+        public async Task<bool> UpdateRoleAsync(UpdateUserRoleRequest request)
         {
+            if (string.IsNullOrWhiteSpace(request.Email))
+                throw new ValidationException("El email es requerido.");
+
+            if (!Regex.IsMatch(request.Email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                throw new ValidationException("El email no tiene un formato válido.");
+
             if (!Enum.IsDefined(typeof(UserRoleEnum), request.RoleId))
                 throw new ValidationException("El rol especificado no es válido.");
 
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _userRepository.GetByEmailAsync(request.Email.Trim());
+
             if (user == null)
-                return false;
+                throw new NotFoundException("No existe un usuario con ese email.");
 
             user.RoleId = request.RoleId;
             user.UpdatedDateTime = DateTime.UtcNow;
 
             await _userRepository.UpdateAsync(user);
+
             return true;
         }
     }

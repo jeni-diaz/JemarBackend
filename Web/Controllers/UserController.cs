@@ -31,13 +31,10 @@ namespace Jemar.Presentation.Controllers
             return Ok(users);
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<UserResponse>> GetById(Guid id)
+        [HttpGet("{email}")]
+        public async Task<ActionResult<UserResponse>> GetByEmail(string email)
         {
-            var user = await _userService.GetByIdAsync(id);
-            if (user == null)
-                return NotFound();
-
+            var user = await _userService.GetByEmailAsync(email);
             return Ok(user);
         }
 
@@ -48,13 +45,10 @@ namespace Jemar.Presentation.Controllers
             return Ok(user);
         }
 
-        [HttpPut("{id}/role")]
-        public async Task<IActionResult> UpdateRole(Guid id, UpdateUserRoleRequest request)
+        [HttpPut("role")]
+        public async Task<IActionResult> UpdateRole(UpdateUserRoleRequest request)
         {
-            var result = await _userService.UpdateRoleAsync(id, request);
-            if (!result)
-                return NotFound("User not found.");
-
+            await _userService.UpdateRoleAsync(request);
             return NoContent();
         }
     }
