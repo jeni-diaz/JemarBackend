@@ -37,10 +37,7 @@ jobs:
       - name: Apply database migrations
         run: |
           dotnet tool install --global dotnet-ef
-          $runnerIp = (Invoke-WebRequest -Uri "https://api.ipify.org" -UseBasicParsing).Content.Trim()
-          az sql server firewall-rule create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --server jemar --name github-runner --start-ip-address $runnerIp --end-ip-address $runnerIp
           dotnet ef database update --project Jemar.Infrestructure/Jemar.Infrastructure.csproj --startup-project Web/Jemar.Presentation.csproj
-          az sql server firewall-rule delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --server jemar --name github-runner
         env:
           ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_CONNECTION_STRING }}
           Jwt__Secret: ${{ secrets.JWT_SECRET }}
