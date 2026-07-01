@@ -5,6 +5,7 @@ using Jemar.Aplication.Responses;
 using Jemar.Domain.Enums;
 using Jemar.Aplication.Abstractions.Infrastructure;
 using Jemar.Aplication.Mapper;
+using System.Text.RegularExpressions;
 
 namespace Jemar.Aplication.Services
 {
@@ -34,17 +35,30 @@ namespace Jemar.Aplication.Services
 
         public async Task<UserResponse> CreateAsync(CreateUserRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.FirstName))
-                throw new ValidationException("El nombre es requerido.");
+            if (string.IsNullOrWhiteSpace(request.FirstName) || request.FirstName.Trim().Length <= 3)
+                throw new ValidationException("El nombre debe tener más de 3 letras.");
 
-            if (string.IsNullOrWhiteSpace(request.LastName))
-                throw new ValidationException("El apellido es requerido.");
+            if (!Regex.IsMatch(request.FirstName.Trim(), @"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"))
+                throw new ValidationException("El nombre solo puede contener letras.");
 
-            if (string.IsNullOrWhiteSpace(request.Email))
-                throw new ValidationException("El email es requerido.");
+            if (string.IsNullOrWhiteSpace(request.LastName) || request.LastName.Trim().Length <= 3)
+                throw new ValidationException("El apellido debe tener más de 3 letras.");
+
+            if (!Regex.IsMatch(request.LastName.Trim(), @"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"))
+                throw new ValidationException("El apellido solo puede contener letras.");
+
+            if (string.IsNullOrWhiteSpace(request.Email) ||
+                !Regex.IsMatch(request.Email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                throw new ValidationException("El email no tiene un formato válido.");
 
             if (string.IsNullOrWhiteSpace(request.Password))
                 throw new ValidationException("La contraseña es requerida.");
+
+            var letters = Regex.Matches(request.Password, @"[a-zA-Z]").Count;
+            var digits = Regex.Matches(request.Password, @"[0-9]").Count;
+
+            if (letters < 3 || digits < 1)
+                throw new ValidationException("La contraseña debe tener al menos 3 letras y 1 número.");
 
             if (!Enum.IsDefined(typeof(UserRoleEnum), request.Role))
                 throw new ValidationException("El rol especificado no es válido.");
