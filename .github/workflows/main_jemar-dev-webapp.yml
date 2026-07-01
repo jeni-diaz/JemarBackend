@@ -32,6 +32,9 @@ jobs:
           dotnet ef database update --project Jemar.Infrestructure/Jemar.Infrastructure.csproj --startup-project Web/Jemar.Presentation.csproj
         env:
           ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_CONNECTION_STRING }}
+          Jwt__Secret: ${{ secrets.JWT_SECRET }}
+          Jwt__Issuer: ${{ secrets.JWT_ISSUER }}
+          Jwt__Audience: ${{ secrets.JWT_AUDIENCE }}
 
       - name: Publish with dotnet
         run: dotnet publish Web/Jemar.Presentation.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
