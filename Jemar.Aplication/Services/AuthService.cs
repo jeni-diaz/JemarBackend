@@ -39,7 +39,7 @@ namespace Jemar.Aplication.Services
             {
                 Token = token,
                 Email = user.Email,
-                Role = user.Role?.Name.ToString() ?? ((UserRole)user.RoleId).ToString(),
+                Role = user.Role?.Name.ToString() ?? ((UserRoleEnum)user.RoleId).ToString(),
                 UserId = user.Id
             };
         }
@@ -81,7 +81,7 @@ namespace Jemar.Aplication.Services
             {
                 Token = token,
                 Email = saved.Email,
-                Role = ((UserRole)saved.RoleId).ToString(),
+                Role = ((UserRoleEnum)saved.RoleId).ToString(),
                 UserId = saved.Id
             };
         }

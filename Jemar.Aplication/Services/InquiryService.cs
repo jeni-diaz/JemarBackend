@@ -23,7 +23,7 @@ namespace Jemar.Aplication.Services
         public async Task<List<InquiryResponse>> GetAllAsync(Guid currentUserId, string currentUserRole)
         {
             List<Inquiry> inquiries;
-            if (currentUserRole == UserRole.Client.ToString())
+            if (currentUserRole == UserRoleEnum.Client.ToString())
             {
                 inquiries = await _inquiryRepository.GetByClientIdAsync(currentUserId);
             }
@@ -41,7 +41,7 @@ namespace Jemar.Aplication.Services
             if (inquiry == null)
                 return null;
 
-            if (currentUserRole == UserRole.Client.ToString() && inquiry.ClientId != currentUserId)
+            if (currentUserRole == UserRoleEnum.Client.ToString() && inquiry.CreatedByUserId != currentUserId)
             {
                 throw new UnauthorizedAccessException("No tiene autorización para ver esta consulta.");
             }
@@ -55,7 +55,7 @@ namespace Jemar.Aplication.Services
             if (user == null)
                 throw new NotFoundException("Cliente no encontrado.");
 
-            if (user.RoleId != (int)UserRole.Client)
+            if (user.RoleId != (int)UserRoleEnum.Client)
                 throw new UnauthorizedException("Solo los clientes pueden crear consultas.");
 
             var inquiry = request.ToInquiry(user);
@@ -69,25 +69,25 @@ namespace Jemar.Aplication.Services
             if (inquiry == null)
                 return false;
 
-            if (currentUserRole == UserRole.Employee.ToString() || currentUserRole == UserRole.SuperAdmin.ToString())
+            if (currentUserRole == UserRoleEnum.Employee.ToString() || currentUserRole == UserRoleEnum.SuperAdmin.ToString())
             {
-                inquiry.Response = request.Message;
+                inquiry.Response = request.Response;
                 inquiry.Status = InquiryStatusEnum.Answered;
-                inquiry.EmployeeId = currentUserId;
+                inquiry.RespondedByUserId = currentUserId;
                 inquiry.UpdatedDateTime = DateTime.UtcNow;
 
                 await _inquiryRepository.UpdateAsync(inquiry);
                 return true;
             }
-            else if (currentUserRole == UserRole.Client.ToString())
+            else if (currentUserRole == UserRoleEnum.Client.ToString())
             {
-                if (inquiry.ClientId != currentUserId)
+                if (inquiry.CreatedByUserId != currentUserId)
                     throw new UnauthorizedAccessException("No está autorizado para responder a esta consulta.");
 
                 if (inquiry.Status != InquiryStatusEnum.Answered)
                     throw new ArgumentException("Solo puede responder a las consultas que hayan sido atendidas por nuestro personal.");
 
-                inquiry.ClientReply = request.Message;
+                inquiry.ClientReply = request.Response;
                 inquiry.Status = InquiryStatusEnum.InProgress;
                 inquiry.UpdatedDateTime = DateTime.UtcNow;
 
@@ -117,9 +117,9 @@ namespace Jemar.Aplication.Services
             if (inquiry == null)
                 return false;
 
-            if (currentUserRole == UserRole.Client.ToString())
+            if (currentUserRole == UserRoleEnum.Client.ToString())
             {
-                if (inquiry.ClientId != currentUserId)
+                if (inquiry.CreatedByUserId != currentUserId)
                     throw new UnauthorizedAccessException("No tiene autorización para eliminar esta consulta.");
 
                 if (inquiry.Status != InquiryStatusEnum.New)

@@ -15,7 +15,7 @@ namespace Jemar.Infrastructure.Persistence.Repository
             _context = context;
         }
 
-        public async Task<Role?> GetByNameAsync(UserRole name)
+        public async Task<Domain.Entities.UserRole?> GetByNameAsync(Domain.Enums.UserRoleEnum name)
         {
             return await _context.Roles
                 .FirstOrDefaultAsync(r => r.Name == name);

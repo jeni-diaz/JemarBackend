@@ -23,7 +23,7 @@ namespace Jemar.Aplication.Services
         public async Task<List<ShipmentResponse>> GetAllAsync(Guid currentUserId, string currentUserRole)
         {
             List<Shipment> shipments;
-            if (currentUserRole == UserRole.Client.ToString())
+            if (currentUserRole == UserRoleEnum.Client.ToString())
             {
                 shipments = await _shipmentRepository.GetByClientIdAsync(currentUserId);
             }
@@ -41,7 +41,7 @@ namespace Jemar.Aplication.Services
             if (shipment == null)
                 return null;
 
-            if (currentUserRole == UserRole.Client.ToString() &&
+            if (currentUserRole == UserRoleEnum.Client.ToString() &&
                 shipment.CreatedByUserId != currentUserId &&
                 shipment.OnBehalfOfClientId != currentUserId)
             {
@@ -53,12 +53,12 @@ namespace Jemar.Aplication.Services
 
         public async Task<ShipmentResponse> CreateAsync(CreateShipmentRequest request, Guid currentUserId, string currentUserRole)
         {
-            var sugerenciasOrigen = await _openStreetMapService.AutocompletarDireccionAsync(request.Origin);
-            if (sugerenciasOrigen == null || !sugerenciasOrigen.Any())
+            var originSuggestions = await _openStreetMapService.AutocompleteAddressAsync(request.Origin);
+            if (originSuggestions == null || !originSuggestions.Any())
                 throw new ValidationException($"La dirección de origen '{request.Origin}' no es válida en Argentina.");
 
-            var sugerenciasDestino = await _openStreetMapService.AutocompletarDireccionAsync(request.Destination);
-            if (sugerenciasDestino == null || !sugerenciasDestino.Any())
+            var destinationSuggestions = await _openStreetMapService.AutocompleteAddressAsync(request.Destination);
+            if (destinationSuggestions == null || !destinationSuggestions.Any())
                 throw new ValidationException($"La dirección de destino '{request.Destination}' no es válida en Argentina.");
 
             var shipmentType = await _shipmentRepository.GetShipmentTypeByIdAsync(request.ShipmentTypeId);
@@ -66,20 +66,20 @@ namespace Jemar.Aplication.Services
                 throw new ValidationException("ID de tipo de envío no válido.");
 
             int createdByRoleId = 0;
-            if (currentUserRole == UserRole.SuperAdmin.ToString())
+            if (currentUserRole == UserRoleEnum.SuperAdmin.ToString())
             {
-                createdByRoleId = (int)UserRole.SuperAdmin;
+                createdByRoleId = (int)UserRoleEnum.SuperAdmin;
             }
-            else if (currentUserRole == UserRole.Employee.ToString())
+            else if (currentUserRole == UserRoleEnum.Employee.ToString())
             {
-                createdByRoleId = (int)UserRole.Employee;
+                createdByRoleId = (int)UserRoleEnum.Employee;
             }
             else
             {
-                createdByRoleId = (int)UserRole.Client;
+                createdByRoleId = (int)UserRoleEnum.Client;
             }
 
-            if (createdByRoleId == (int)UserRole.Client)
+            if (createdByRoleId == (int)UserRoleEnum.Client)
             {
                 request.OnBehalfOfClientId = null;
             }
@@ -92,8 +92,8 @@ namespace Jemar.Aplication.Services
             }
 
             var shipment = request.ToShipment(currentUserId, createdByRoleId);
-            shipment.Origin = sugerenciasOrigen.First();
-            shipment.Destination = sugerenciasDestino.First();
+            shipment.Origin = originSuggestions.First();
+            shipment.Destination = destinationSuggestions.First();
             shipment.Price = shipmentType.Price;
 
             var saved = await _shipmentRepository.AddAsync(shipment);
@@ -103,7 +103,7 @@ namespace Jemar.Aplication.Services
 
         public async Task<bool> UpdateStatusAsync(Guid id, UpdateShipmentRequest request, Guid currentUserId, string currentUserRole)
         {
-            if (currentUserRole == UserRole.Client.ToString())
+            if (currentUserRole == UserRoleEnum.Client.ToString())
                 throw new UnauthorizedAccessException("Los clientes no están autorizados a actualizar el estado del envío.");
 
             var shipment = await _shipmentRepository.GetByIdAsync(id);
@@ -115,10 +115,10 @@ namespace Jemar.Aplication.Services
 
             if (currentStatus == (int)ShipmentStatusEnum.Pending)
             {
-                if (nextStatus != (int)ShipmentStatusEnum.In_transit && nextStatus != (int)ShipmentStatusEnum.Cancelled)
+                if (nextStatus != (int)ShipmentStatusEnum.InTransit && nextStatus != (int)ShipmentStatusEnum.Cancelled)
                     throw new ValidationException("Un envío pendiente solo puede pasar al estado En tránsito o Cancelado.");
             }
-            else if (currentStatus == (int)ShipmentStatusEnum.In_transit)
+            else if (currentStatus == (int)ShipmentStatusEnum.InTransit)
             {
                 if (nextStatus != (int)ShipmentStatusEnum.Delivered && nextStatus != (int)ShipmentStatusEnum.Cancelled)
                     throw new ValidationException("Un envío En tránsito solo puede pasar al estado de Entregado o Cancelado.");
@@ -145,7 +145,7 @@ namespace Jemar.Aplication.Services
             if (shipment == null)
                 return false;
 
-            if (currentUserRole == UserRole.Client.ToString())
+            if (currentUserRole == UserRoleEnum.Client.ToString())
             {
                 if (shipment.CreatedByUserId != currentUserId &&
                     shipment.OnBehalfOfClientId != currentUserId)

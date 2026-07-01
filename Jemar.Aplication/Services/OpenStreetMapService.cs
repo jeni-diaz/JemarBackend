@@ -14,30 +14,30 @@ namespace Jemar.Aplication.Services
             _httpClient = httpClient;
         }
 
-        public async Task<List<string>> AutocompletarDireccionAsync(string query)
+        public async Task<List<string>> AutocompleteAddressAsync(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
                 return new List<string>();
 
-            var queryCodificado = HttpUtility.UrlEncode(query);
+            var encodedQuery = HttpUtility.UrlEncode(query);
 
-            var url = $"/search?format=json&limit=5&countrycodes=ar&q={queryCodificado}";
+            var url = $"/search?format=json&limit=5&countrycodes=ar&q={encodedQuery}";
 
             var response = await _httpClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
             var data = await response.Content.ReadFromJsonAsync<List<OpenStreetMapResponse>>();
 
-            var sugerencias = new List<string>();
+            var suggestions = new List<string>();
             if (data != null)
             {
                 foreach (var item in data)
                 {
-                    sugerencias.Add(item.DisplayName);
+                    suggestions.Add(item.DisplayName);
                 }
             }
 
-            return sugerencias;
+            return suggestions;
         }
     }
 }

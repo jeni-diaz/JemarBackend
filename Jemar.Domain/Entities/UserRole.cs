@@ -2,10 +2,10 @@
 
 namespace Jemar.Domain.Entities
 {
-    public class Role
+    public class UserRole
     {
         public int Id { get; set; }
-        public UserRole Name { get; set; }
+        public Enums.UserRoleEnum Name { get; set; }
         public string Description { get; set; } = string.Empty;
     }
 }

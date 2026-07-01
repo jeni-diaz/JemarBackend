@@ -49,12 +49,12 @@ namespace Jemar.Infrastructure.Services
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role?.Name.ToString() ?? ((UserRole)user.RoleId).ToString()),
-                new Claim("role", user.Role?.Name.ToString() ?? ((UserRole)user.RoleId).ToString())
+                new Claim(ClaimTypes.Role, user.Role?.Name.ToString() ?? ((UserRoleEnum)user.RoleId).ToString()),
+                new Claim("role", user.Role?.Name.ToString() ?? ((UserRoleEnum)user.RoleId).ToString())
             };
 
             var token = new JwtSecurityToken(
-                issuer: issuer,
+                issuer: issuer, 
                 audience: audience,
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(expirationHours),
