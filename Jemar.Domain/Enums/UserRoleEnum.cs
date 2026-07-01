@@ -1,6 +1,6 @@
 ﻿namespace Jemar.Domain.Enums
 {
-    public enum UserRole
+    public enum UserRoleEnum
     {
         Client = 1,
         Employee = 2,

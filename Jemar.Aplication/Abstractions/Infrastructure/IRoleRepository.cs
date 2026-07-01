@@ -6,6 +6,6 @@ namespace Jemar.Aplication.Abstractions.Infrastructure
 {
     public interface IRoleRepository
     {
-        Task<Role?> GetByNameAsync(UserRole name);
+        Task<Domain.Entities.UserRole?> GetByNameAsync(Domain.Enums.UserRoleEnum name);
     }
 }

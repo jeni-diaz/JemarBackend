@@ -17,8 +17,10 @@ namespace Jemar.Aplication.Mapper
                 Email = client.Email,
                 Message = request.Message,
                 Status = InquiryStatusEnum.New,
-                ClientId = client.Id,
-                IsDeleted = false
+                CreatedByUserId = client.Id,
+                IsDeleted = false,
+                CreatedDateTime = DateTime.UtcNow,  
+                UpdatedDateTime = DateTime.UtcNow
             };
         }
 
@@ -34,7 +36,7 @@ namespace Jemar.Aplication.Mapper
                 Response = inquiry.Response,
                 ClientReply = inquiry.ClientReply,
                 Status = inquiry.Status.ToString(),
-                CreatedAt = inquiry.CreatedDateTime // Mapeamos usando CreatedDateTime de BaseEntity
+                CreatedAt = inquiry.CreatedDateTime
             };
         }
 

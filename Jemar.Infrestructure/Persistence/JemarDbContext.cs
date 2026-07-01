@@ -10,7 +10,7 @@ namespace Jemar.Infrastructure.Persistence
         {
         }
         public DbSet<User> Users { get; set; }
-        public DbSet<Role> Roles { get; set; }
+        public DbSet<Domain.Entities.UserRole> Roles { get; set; }
         public DbSet<Shipment> Shipments { get; set; }
         public DbSet<ShipmentType> ShipmentTypes { get; set; }
         public DbSet<ShipmentStatus> ShipmentStatuses { get; set; }
@@ -49,26 +49,26 @@ namespace Jemar.Infrastructure.Persistence
                 .HasPrecision(18, 2);
 
             modelBuilder.Entity<Inquiry>()
-                .HasOne(i => i.Client)
-                .WithMany(u => u.Inquiries)
-                .HasForeignKey(i => i.ClientId)
+                .HasOne(i => i.CreatedByUser)
+                .WithMany(u => u.CreatedInquiries)
+                .HasForeignKey(i => i.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Inquiry>()
-                .HasOne(i => i.Employee)
-                .WithMany(u => u.AssignedInquiries)
-                .HasForeignKey(i => i.EmployeeId)
+                .HasOne(i => i.RespondedByUser)
+                .WithMany(u => u.RespondedInquiries)
+                .HasForeignKey(i => i.RespondedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Role>().HasData(
-                new Role { Id = 1, Name = UserRole.Client, Description = "Client Role" },
-                new Role { Id = 2, Name = UserRole.Employee, Description = "Employee Role" },
-                new Role { Id = 3, Name = UserRole.SuperAdmin, Description = "Super Admin Role" }
+            modelBuilder.Entity<UserRole>().HasData(
+                new UserRole { Id = 1, Name = UserRoleEnum.Client, Description = "Client Role" },
+                new UserRole { Id = 2, Name = UserRoleEnum.Employee, Description = "Employee Role" },
+                new UserRole { Id = 3, Name = UserRoleEnum.SuperAdmin, Description = "Super Admin Role" }
             );
 
             modelBuilder.Entity<ShipmentStatus>().HasData(
                 new ShipmentStatus { Id = 1, Name = ShipmentStatusEnum.Pending, Description = "Shipment is pending" },
-                new ShipmentStatus { Id = 2, Name = ShipmentStatusEnum.In_transit, Description = "Shipment is in transit" },
+                new ShipmentStatus { Id = 2, Name = ShipmentStatusEnum.InTransit, Description = "Shipment is in transit" },
                 new ShipmentStatus { Id = 3, Name = ShipmentStatusEnum.Delivered, Description = "Shipment has been delivered" },
                 new ShipmentStatus { Id = 4, Name = ShipmentStatusEnum.Cancelled, Description = "Shipment has been cancelled" }
             );

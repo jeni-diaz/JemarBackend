@@ -15,7 +15,7 @@ namespace Jemar.Aplication.Mapper
                 LastName = request.LastName.Trim(),
                 Email = request.Email.Trim().ToLower(),
                 Password = request.Password,
-                RoleId = (int)UserRole.Client,
+                RoleId = (int)UserRoleEnum.Client,
                 IsActive = true,
                 CreatedDateTime = DateTime.UtcNow,
                 UpdatedDateTime = DateTime.UtcNow

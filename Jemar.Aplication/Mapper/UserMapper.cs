@@ -20,7 +20,9 @@ namespace Jemar.Aplication.Mapper
                 Email = request.Email,
                 Password = request.Password,
                 RoleId = request.Role,
-                IsActive = true
+                IsActive = true,
+                CreatedDateTime = DateTime.UtcNow,
+                UpdatedDateTime = DateTime.UtcNow
             };
 
 
@@ -34,7 +36,7 @@ namespace Jemar.Aplication.Mapper
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Email = user.Email,
-                Role = user.Role?.Name.ToString() ?? ((UserRole)user.RoleId).ToString()
+                Role = user.Role?.Name.ToString() ?? ((UserRoleEnum)user.RoleId).ToString()
             };
         }
 

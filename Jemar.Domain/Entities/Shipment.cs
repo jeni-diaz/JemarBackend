@@ -14,7 +14,7 @@ namespace Jemar.Domain.Entities
         public Guid CreatedByUserId { get; set; }
         public User CreatedByUser { get; set; } = null!;
         public int CreatedByRoleId { get; set; }
-        public Role CreatedByRole { get; set; } = null!;
+        public UserRole CreatedByRole { get; set; } = null!;
         public Guid? OnBehalfOfClientId { get; set; }
         public User? OnBehalfOfClient { get; set; }
     }

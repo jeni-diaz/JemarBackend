@@ -2,6 +2,6 @@
 {
     public interface IOpenStreetMapService
     {
-        Task<List<string>> AutocompletarDireccionAsync(string query);
+        Task<List<string>> AutocompleteAddressAsync(string query);
     }
 }

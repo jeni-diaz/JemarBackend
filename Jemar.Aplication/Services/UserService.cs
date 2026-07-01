@@ -46,7 +46,7 @@ namespace Jemar.Aplication.Services
             if (string.IsNullOrWhiteSpace(request.Password))
                 throw new ValidationException("La contraseña es requerida.");
 
-            if (!Enum.IsDefined(typeof(UserRole), request.Role))
+            if (!Enum.IsDefined(typeof(UserRoleEnum), request.Role))
                 throw new ValidationException("El rol especificado no es válido.");
 
             var existing = await _userRepository.GetByEmailAsync(request.Email.Trim());
@@ -62,7 +62,7 @@ namespace Jemar.Aplication.Services
 
         public async Task<bool> UpdateRoleAsync(Guid userId, UpdateUserRoleRequest request)
         {
-            if (!Enum.IsDefined(typeof(UserRole), request.RoleId))
+            if (!Enum.IsDefined(typeof(UserRoleEnum), request.RoleId))
                 throw new ValidationException("El rol especificado no es válido.");
 
             var user = await _userRepository.GetByIdAsync(userId);
