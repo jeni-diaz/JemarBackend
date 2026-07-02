@@ -5,11 +5,14 @@ classDiagram
 %% ENTIDADES
 %% ======================
 
-class User{
+class BaseEntity{
     +Guid Id
     +DateTime CreatedDateTime
     +DateTime? UpdatedDateTime
     +bool IsDeleted
+}
+
+class User{
     +string FirstName
     +string LastName
     +string Email
@@ -25,10 +28,6 @@ class UserRole{
 }
 
 class Shipment{
-    +Guid Id
-    +DateTime CreatedDateTime
-    +DateTime? UpdatedDateTime
-    +bool IsDeleted
     +string Origin
     +string Destination
     +decimal Price
@@ -53,10 +52,6 @@ class ShipmentStatus{
 }
 
 class Inquiry{
-    +Guid Id
-    +DateTime CreatedDateTime
-    +DateTime? UpdatedDateTime
-    +bool IsDeleted
     +string FirstName
     +string LastName
     +string Email
@@ -69,51 +64,29 @@ class Inquiry{
 }
 
 %% ======================
-%% ENUMS
+%% HERENCIA
 %% ======================
 
-class UserRoleEnum{
-    Client
-    Employee
-    SuperAdmin
-}
-
-class ShipmentTypeEnum{
-    Standard
-    Express
-}
-
-class ShipmentStatusEnum{
-    Pending
-    InTransit
-    Delivered
-    Cancelled
-}
-
-class InquiryStatusEnum{
-    New
-    InProgress
-    Answered
-    Closed
-}
+BaseEntity <|-- User
+BaseEntity <|-- Shipment
+BaseEntity <|-- Inquiry
 
 %% ======================
 %% RELACIONES
 %% ======================
 
-UserRole "1" <-- "0..*" User : Role
+UserRole "1" --> "0..*" User : Role
 
-User "1" --> "0..*" Shipment : CreatedShipments
-User "1" --> "0..*" Shipment : OnBehalfShipments
+User "1" --> "0..*" Shipment : creates
 
-ShipmentType "1" <-- "0..*" Shipment
-ShipmentStatus "1" <-- "0..*" Shipment
-UserRole "1" <-- "0..*" Shipment : CreatedByRole
+User "0..1" --> "0..*" Shipment : on behalf of
 
-User "1" --> "0..*" Inquiry : CreatedInquiries
-User "0..1" --> "0..*" Inquiry : RespondedInquiries
+UserRole "1" --> "0..*" Shipment : created by role
 
-UserRole --> UserRoleEnum
-ShipmentType --> ShipmentTypeEnum
-ShipmentStatus --> ShipmentStatusEnum
-Inquiry --> InquiryStatusEnum
+ShipmentType "1" --> "0..*" Shipment
+
+ShipmentStatus "1" --> "0..*" Shipment
+
+User "1" --> "0..*" Inquiry : creates
+
+User "0..1" --> "0..*" Inquiry : responds
