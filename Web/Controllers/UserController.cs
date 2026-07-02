@@ -51,5 +51,13 @@ namespace Jemar.Presentation.Controllers
             await _userService.UpdateRoleAsync(request);
             return NoContent();
         }
+
+        [HttpDelete("{email}")]
+        public async Task<IActionResult> Delete(string email)
+        {
+            await _userService.DeleteAsync(email);
+            return NoContent();
+        }
+
     }
 }

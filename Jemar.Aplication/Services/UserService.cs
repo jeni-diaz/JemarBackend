@@ -104,5 +104,36 @@ namespace Jemar.Aplication.Services
 
             return true;
         }
+
+        public async Task<bool> DeleteAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ValidationException("El email es requerido.");
+
+            if (!Regex.IsMatch(email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                throw new ValidationException("El email no tiene un formato válido.");
+
+            var user = await _userRepository.GetByEmailAsync(email.Trim());
+
+            if (user == null)
+                throw new NotFoundException("No existe un usuario con ese email.");
+
+            if (user.IsDeleted)
+                throw new ConflictException("El usuario ya fue eliminado.");
+
+            if (user.RoleId == (int)UserRoleEnum.SuperAdmin)
+                throw new ValidationException("No se puede eliminar el Super Admin del sistema.");
+
+            user.IsDeleted = true;
+            user.IsActive = false;
+            user.DeletedDateTime = DateTime.UtcNow;
+            user.UpdatedDateTime = DateTime.UtcNow;
+
+            await _userRepository.UpdateAsync(user);
+
+            return true;
+        }
+
+
     }
 }
