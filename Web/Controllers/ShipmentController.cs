@@ -36,9 +36,6 @@ namespace Jemar.Presentation.Controllers
             var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
 
             var shipment = await _shipmentService.GetByIdAsync(id, userId, role);
-            if (shipment == null)
-                return NotFound();
-
             return Ok(shipment);
         }
 
@@ -59,10 +56,7 @@ namespace Jemar.Presentation.Controllers
             var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
             var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
 
-            var result = await _shipmentService.UpdateStatusAsync(id, request, userId, role);
-            if (!result)
-                return NotFound("Shipment not found.");
-
+            await _shipmentService.UpdateStatusAsync(id, request, userId, role);
             return NoContent();
         }
 
@@ -72,10 +66,7 @@ namespace Jemar.Presentation.Controllers
             var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
             var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
 
-            var result = await _shipmentService.DeleteAsync(id, userId, role);
-            if (!result)
-                return NotFound("Shipment not found.");
-
+            await _shipmentService.DeleteAsync(id, userId, role);
             return NoContent();
         }
     }

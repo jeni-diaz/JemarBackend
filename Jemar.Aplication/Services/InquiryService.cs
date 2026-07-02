@@ -39,7 +39,7 @@ namespace Jemar.Aplication.Services
         {
             var inquiry = await _inquiryRepository.GetByIdAsync(id);
             if (inquiry == null)
-                return null;
+                throw new NotFoundException("Consulta no encontrada.");
 
             if (currentUserRole == UserRoleEnum.Client.ToString() && inquiry.CreatedByUserId != currentUserId)
             {
@@ -51,6 +51,9 @@ namespace Jemar.Aplication.Services
 
         public async Task<InquiryResponse> CreateAsync(CreateInquiryRequest request, Guid clientId)
         {
+            if (string.IsNullOrWhiteSpace(request.Message))
+                throw new ValidationException("El mensaje es requerido.");
+
             var user = await _userRepository.GetByIdAsync(clientId);
             if (user == null)
                 throw new NotFoundException("Cliente no encontrado.");
@@ -67,7 +70,7 @@ namespace Jemar.Aplication.Services
         {
             var inquiry = await _inquiryRepository.GetByIdAsync(id);
             if (inquiry == null)
-                return false;
+                throw new NotFoundException("Consulta no encontrada.");
 
             if (currentUserRole == UserRoleEnum.Employee.ToString() || currentUserRole == UserRoleEnum.SuperAdmin.ToString())
             {
@@ -102,7 +105,7 @@ namespace Jemar.Aplication.Services
         {
             var inquiry = await _inquiryRepository.GetByIdAsync(id);
             if (inquiry == null)
-                return false;
+                throw new NotFoundException("Consulta no encontrada.");
 
             inquiry.Status = InquiryStatusEnum.Closed;
             inquiry.UpdatedDateTime = DateTime.UtcNow;
@@ -115,7 +118,7 @@ namespace Jemar.Aplication.Services
         {
             var inquiry = await _inquiryRepository.GetByIdAsync(id);
             if (inquiry == null)
-                return false;
+                throw new NotFoundException("Consulta no encontrada.");
 
             if (currentUserRole == UserRoleEnum.Client.ToString())
             {

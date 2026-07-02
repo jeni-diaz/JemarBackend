@@ -39,7 +39,7 @@ namespace Jemar.Aplication.Services
         {
             var shipment = await _shipmentRepository.GetByIdAsync(id);
             if (shipment == null)
-                return null;
+                throw new NotFoundException("Envío no encontrado.");
 
             if (currentUserRole == UserRoleEnum.Client.ToString() &&
                 shipment.CreatedByUserId != currentUserId &&
@@ -108,7 +108,7 @@ namespace Jemar.Aplication.Services
 
             var shipment = await _shipmentRepository.GetByIdAsync(id);
             if (shipment == null)
-                return false;
+                throw new NotFoundException("Envío no encontrado.");
 
             int currentStatus = shipment.ShipmentStatusId;
             int nextStatus = request.ShipmentStatusId;
@@ -143,7 +143,7 @@ namespace Jemar.Aplication.Services
         {
             var shipment = await _shipmentRepository.GetByIdAsync(id);
             if (shipment == null)
-                return false;
+                throw new NotFoundException("Envío no encontrado.");
 
             if (currentUserRole == UserRoleEnum.Client.ToString())
             {

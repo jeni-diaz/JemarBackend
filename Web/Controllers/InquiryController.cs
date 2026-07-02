@@ -36,9 +36,6 @@ namespace Jemar.Presentation.Controllers
             var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
 
             var inquiry = await _inquiryService.GetByIdAsync(id, userId, role);
-            if (inquiry == null)
-                return NotFound();
-
             return Ok(inquiry);
         }
 
@@ -56,10 +53,7 @@ namespace Jemar.Presentation.Controllers
             var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
             var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
 
-            var result = await _inquiryService.RespondAsync(id, request, userId, role);
-            if (!result)
-                return NotFound("Inquiry not found.");
-
+            await _inquiryService.RespondAsync(id, request, userId, role);
             return NoContent();
         }
 
@@ -67,10 +61,7 @@ namespace Jemar.Presentation.Controllers
         [Authorize(Policy = Policies.EmployeeOrAbove)]
         public async Task<IActionResult> Close(Guid id)
         {
-            var result = await _inquiryService.CloseAsync(id);
-            if (!result)
-                return NotFound("Inquiry not found.");
-
+            await _inquiryService.CloseAsync(id);
             return NoContent();
         }
 
@@ -80,10 +71,7 @@ namespace Jemar.Presentation.Controllers
             var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
             var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
 
-            var result = await _inquiryService.DeleteAsync(id, userId, role);
-            if (!result)
-                return NotFound("Inquiry not found.");
-
+            await _inquiryService.DeleteAsync(id, userId, role);
             return NoContent();
         }
     }
