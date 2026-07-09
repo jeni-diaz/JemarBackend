@@ -16,6 +16,10 @@ namespace Jemar.Aplication.Requests
         [Required(ErrorMessage = "Shipment type is required.")]
         [Range(1, int.MaxValue, ErrorMessage = "Invalid shipment type ID.")]
         public int ShipmentTypeId { get; set; }
+
+        [Required(ErrorMessage = "Package size is required.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Invalid package size ID.")]
+        public int PackageSizeId { get; set; }
         public Guid? OnBehalfOfClientId { get; set; }
     }
 }

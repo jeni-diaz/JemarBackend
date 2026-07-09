@@ -6,6 +6,7 @@ namespace Jemar.Aplication.Abstractions.Infrastructure
     {
         Task<List<Shipment>> GetByClientIdAsync(Guid clientId);
         Task<ShipmentType?> GetShipmentTypeByIdAsync(int id);
+        Task<PackageSize?> GetPackageSizeByIdAsync(int id);
 
     }
 }
