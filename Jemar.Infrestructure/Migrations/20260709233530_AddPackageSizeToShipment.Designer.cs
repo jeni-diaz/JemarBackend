@@ -4,6 +4,7 @@ using Jemar.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Jemar.Infrastructure.Migrations
 {
     [DbContext(typeof(JemarDbContext))]
-    partial class JemarDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709233530_AddPackageSizeToShipment")]
+    partial class AddPackageSizeToShipment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -88,10 +91,6 @@ namespace Jemar.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("BasePrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<decimal>("MaxHeightCm")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -107,10 +106,6 @@ namespace Jemar.Infrastructure.Migrations
                     b.Property<int>("Name")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("RatePerKm")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<decimal>("Surcharge")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -123,34 +118,28 @@ namespace Jemar.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            BasePrice = 1500.00m,
                             MaxHeightCm = 30.00m,
                             MaxLengthCm = 30.00m,
                             MaxWidthCm = 30.00m,
                             Name = 1,
-                            RatePerKm = 20.00m,
                             Surcharge = 0.00m
                         },
                         new
                         {
                             Id = 2,
-                            BasePrice = 2500.00m,
                             MaxHeightCm = 60.00m,
                             MaxLengthCm = 60.00m,
                             MaxWidthCm = 60.00m,
                             Name = 2,
-                            RatePerKm = 35.00m,
                             Surcharge = 1000.00m
                         },
                         new
                         {
                             Id = 3,
-                            BasePrice = 4000.00m,
                             MaxHeightCm = 120.00m,
                             MaxLengthCm = 120.00m,
                             MaxWidthCm = 120.00m,
                             Name = 3,
-                            RatePerKm = 50.00m,
                             Surcharge = 2500.00m
                         });
                 });
@@ -176,10 +165,6 @@ namespace Jemar.Infrastructure.Migrations
                     b.Property<string>("Destination")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("DistanceKm")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -285,6 +270,10 @@ namespace Jemar.Infrastructure.Migrations
                     b.Property<int>("Name")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("Id");
 
                     b.ToTable("ShipmentTypes");
@@ -294,13 +283,15 @@ namespace Jemar.Infrastructure.Migrations
                         {
                             Id = 1,
                             Description = "Express shipment (24h)",
-                            Name = 1
+                            Name = 1,
+                            Price = 3000.00m
                         },
                         new
                         {
                             Id = 2,
                             Description = "Standard shipment (3-5 days)",
-                            Name = 2
+                            Name = 2,
+                            Price = 1500.00m
                         });
                 });
 

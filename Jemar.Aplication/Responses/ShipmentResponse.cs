@@ -7,9 +7,11 @@ namespace Jemar.Aplication.Responses
         public Guid Id { get; set; }
         public string Origin { get; set; } = string.Empty;
         public string Destination { get; set; } = string.Empty;
+        public decimal DistanceKm { get; set; }
         public decimal Price { get; set; }
         public string ShipmentType { get; set; } = string.Empty;
         public string ShipmentStatus { get; set; } = string.Empty;
+        public string PackageSize { get; set; } = string.Empty;
         public Guid CreatedByUserId { get; set; }
         public int CreatedByRoleId { get; set; }
         public Guid? OnBehalfOfClientId { get; set; }

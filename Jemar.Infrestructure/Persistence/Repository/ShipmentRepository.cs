@@ -15,6 +15,7 @@ namespace Jemar.Infrastructure.Persistence.Repository
             return await _context.Shipments
                 .Include(s => s.ShipmentType)
                 .Include(s => s.ShipmentStatus)
+                .Include(s => s.PackageSize)
                 .Where(s => !s.IsDeleted)
                 .ToListAsync();
         }
@@ -24,6 +25,7 @@ namespace Jemar.Infrastructure.Persistence.Repository
             return await _context.Shipments
                 .Include(s => s.ShipmentType)
                 .Include(s => s.ShipmentStatus)
+                .Include(s => s.PackageSize)
                 .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
         }
 
@@ -32,6 +34,7 @@ namespace Jemar.Infrastructure.Persistence.Repository
             return await _context.Shipments
                 .Include(s => s.ShipmentType)
                 .Include(s => s.ShipmentStatus)
+                .Include(s => s.PackageSize)
                 .Where(s => (s.CreatedByUserId == clientId || s.OnBehalfOfClientId == clientId) && !s.IsDeleted)
                 .ToListAsync();
         }
@@ -39,6 +42,11 @@ namespace Jemar.Infrastructure.Persistence.Repository
         public async Task<ShipmentType?> GetShipmentTypeByIdAsync(int id)
         {
             return await _context.ShipmentTypes.FindAsync(id);
+        }
+
+        public async Task<PackageSize?> GetPackageSizeByIdAsync(int id)
+        {
+            return await _context.PackageSizes.FindAsync(id);
         }
     }
 }

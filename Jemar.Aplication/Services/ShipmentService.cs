@@ -3,6 +3,7 @@ using Jemar.Aplication.Abstractions.Infrastructure;
 using Jemar.Aplication.Mapper;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
+using Jemar.Domain.Common;
 using Jemar.Domain.Entities;
 using Jemar.Domain.Enums;
 using Jemar.Aplication.Exceptions;
@@ -53,17 +54,26 @@ namespace Jemar.Aplication.Services
 
         public async Task<ShipmentResponse> CreateAsync(CreateShipmentRequest request, Guid currentUserId, string currentUserRole)
         {
-            var originSuggestions = await _openStreetMapService.AutocompleteAddressAsync(request.Origin);
-            if (originSuggestions == null || !originSuggestions.Any())
+            var origin = await _openStreetMapService.GeocodeAddressAsync(request.Origin);
+            if (origin == null)
                 throw new ValidationException($"La dirección de origen '{request.Origin}' no es válida en Argentina.");
 
-            var destinationSuggestions = await _openStreetMapService.AutocompleteAddressAsync(request.Destination);
-            if (destinationSuggestions == null || !destinationSuggestions.Any())
+            var destination = await _openStreetMapService.GeocodeAddressAsync(request.Destination);
+            if (destination == null)
                 throw new ValidationException($"La dirección de destino '{request.Destination}' no es válida en Argentina.");
 
             var shipmentType = await _shipmentRepository.GetShipmentTypeByIdAsync(request.ShipmentTypeId);
             if (shipmentType == null)
                 throw new ValidationException("ID de tipo de envío no válido.");
+
+            var packageSize = await _shipmentRepository.GetPackageSizeByIdAsync(request.PackageSizeId);
+            if (packageSize == null)
+                throw new ValidationException("ID de tamaño de paquete no válido.");
+
+            var distanceKm = GeoCalculator.HaversineDistanceKm(
+                origin.Latitude, origin.Longitude,
+                destination.Latitude, destination.Longitude);
+            var roundedDistanceKm = Math.Round((decimal)distanceKm, 2);
 
             int createdByRoleId = 0;
             if (currentUserRole == UserRoleEnum.SuperAdmin.ToString())
@@ -92,9 +102,10 @@ namespace Jemar.Aplication.Services
             }
 
             var shipment = request.ToShipment(currentUserId, createdByRoleId);
-            shipment.Origin = originSuggestions.First();
-            shipment.Destination = destinationSuggestions.First();
-            shipment.Price = shipmentType.Price;
+            shipment.Origin = origin.DisplayName;
+            shipment.Destination = destination.DisplayName;
+            shipment.DistanceKm = roundedDistanceKm;
+            shipment.Price = packageSize.BasePrice + (packageSize.RatePerKm * roundedDistanceKm) + packageSize.Surcharge;
 
             var saved = await _shipmentRepository.AddAsync(shipment);
             var fullyLoadedShipment = await _shipmentRepository.GetByIdAsync(saved.Id);

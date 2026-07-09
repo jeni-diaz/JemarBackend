@@ -4,6 +4,7 @@ using Jemar.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Jemar.Infrastructure.Migrations
 {
     [DbContext(typeof(JemarDbContext))]
-    partial class JemarDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709234457_AddDistanceAndKmPricing")]
+    partial class AddDistanceAndKmPricing
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -285,6 +288,10 @@ namespace Jemar.Infrastructure.Migrations
                     b.Property<int>("Name")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("Id");
 
                     b.ToTable("ShipmentTypes");
@@ -294,13 +301,15 @@ namespace Jemar.Infrastructure.Migrations
                         {
                             Id = 1,
                             Description = "Express shipment (24h)",
-                            Name = 1
+                            Name = 1,
+                            Price = 3000.00m
                         },
                         new
                         {
                             Id = 2,
                             Description = "Standard shipment (3-5 days)",
-                            Name = 2
+                            Name = 2,
+                            Price = 1500.00m
                         });
                 });
 

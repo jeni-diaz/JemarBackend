@@ -14,6 +14,7 @@ namespace Jemar.Infrastructure.Persistence
         public DbSet<Shipment> Shipments { get; set; }
         public DbSet<ShipmentType> ShipmentTypes { get; set; }
         public DbSet<ShipmentStatus> ShipmentStatuses { get; set; }
+        public DbSet<PackageSize> PackageSizes { get; set; }
         public DbSet<Inquiry> Inquiries { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -45,7 +46,17 @@ namespace Jemar.Infrastructure.Persistence
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Shipment>()
+                .HasOne(s => s.PackageSize)
+                .WithMany()
+                .HasForeignKey(s => s.PackageSizeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Shipment>()
                 .Property(s => s.Price)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Shipment>()
+                .Property(s => s.DistanceKm)
                 .HasPrecision(18, 2);
 
             modelBuilder.Entity<Inquiry>()
@@ -73,13 +84,25 @@ namespace Jemar.Infrastructure.Persistence
                 new ShipmentStatus { Id = 4, Name = ShipmentStatusEnum.Cancelled, Description = "Shipment has been cancelled" }
             );
 
-            modelBuilder.Entity<ShipmentType>()
-                .Property(s => s.Price)
-                .HasPrecision(18, 2);
-
             modelBuilder.Entity<ShipmentType>().HasData(
-                new ShipmentType { Id = 1, Name = ShipmentTypeEnum.Express, Description = "Express shipment (24h)", Price = 3000.00m },
-                new ShipmentType { Id = 2, Name = ShipmentTypeEnum.Standard, Description = "Standard shipment (3-5 days)", Price = 1500.00m }
+                new ShipmentType { Id = 1, Name = ShipmentTypeEnum.Express, Description = "Express shipment (24h)" },
+                new ShipmentType { Id = 2, Name = ShipmentTypeEnum.Standard, Description = "Standard shipment (3-5 days)" }
+            );
+
+            modelBuilder.Entity<PackageSize>(entity =>
+            {
+                entity.Property(p => p.MaxLengthCm).HasPrecision(18, 2);
+                entity.Property(p => p.MaxWidthCm).HasPrecision(18, 2);
+                entity.Property(p => p.MaxHeightCm).HasPrecision(18, 2);
+                entity.Property(p => p.BasePrice).HasPrecision(18, 2);
+                entity.Property(p => p.RatePerKm).HasPrecision(18, 2);
+                entity.Property(p => p.Surcharge).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<PackageSize>().HasData(
+                new PackageSize { Id = 1, Name = PackageSizeEnum.Small, MaxLengthCm = 30.00m, MaxWidthCm = 30.00m, MaxHeightCm = 30.00m, BasePrice = 1500.00m, RatePerKm = 20.00m, Surcharge = 0.00m },
+                new PackageSize { Id = 2, Name = PackageSizeEnum.Medium, MaxLengthCm = 60.00m, MaxWidthCm = 60.00m, MaxHeightCm = 60.00m, BasePrice = 2500.00m, RatePerKm = 35.00m, Surcharge = 1000.00m },
+                new PackageSize { Id = 3, Name = PackageSizeEnum.Large, MaxLengthCm = 120.00m, MaxWidthCm = 120.00m, MaxHeightCm = 120.00m, BasePrice = 4000.00m, RatePerKm = 50.00m, Surcharge = 2500.00m }
             );
         }
     }
