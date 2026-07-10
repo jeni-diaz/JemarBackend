@@ -41,7 +41,11 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddDbContext<JemarDbContext>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 10,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null)));
 
 var secret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("La configuraci�n 'Jwt:Secret' no existe.");
