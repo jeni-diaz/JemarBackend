@@ -12,9 +12,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -26,13 +23,6 @@ jobs:
 
       - name: Build with dotnet
         run: dotnet build Web/Jemar.Presentation.csproj --configuration Release
-
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D34F1D2BA0B74E6AB22BA7BF985AB820 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F393EB39B9C140E7B23034C4DD37D63D }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C450292E7AA045C6A7A1C66F5235F956 }}
 
       - name: Apply database migrations
         run: |
@@ -56,22 +46,12 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D34F1D2BA0B74E6AB22BA7BF985AB820 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F393EB39B9C140E7B23034C4DD37D63D }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C450292E7AA045C6A7A1C66F5235F956 }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -80,3 +60,4 @@ jobs:
           app-name: 'jemar-dev-webapp'
           slot-name: 'Production'
           package: .
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
