@@ -31,10 +31,31 @@ namespace Jemar.Presentation.Controllers
             return Ok(response);
         }
 
+        [HttpPost("verify-2fa")]
+        public async Task<ActionResult<AuthResponse>> VerifyTwoFactor(VerifyTwoFactorRequest request)
+        {
+            var response = await _authService.VerifyTwoFactorAsync(request);
+            return Ok(response);
+        }
+
         [HttpPost("register")]
         public async Task<ActionResult<AuthResponse>> Register(SignUpRequest request)
         {
             var response = await _authService.SignUpAsync(request);
+            return Ok(response);
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<ActionResult<MessageResponse>> ForgotPassword(ForgotPasswordRequest request)
+        {
+            var response = await _authService.ForgotPasswordAsync(request);
+            return Ok(response);
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<ActionResult<MessageResponse>> ResetPassword(ResetPasswordRequest request)
+        {
+            var response = await _authService.ResetPasswordAsync(request);
             return Ok(response);
         }
     }
