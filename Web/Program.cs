@@ -21,6 +21,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+const string FrontendCors = "FrontendDev";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCors, policy =>
+        policy.WithOrigins("http://localhost:5174") // Vite dev server
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -190,6 +199,8 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
+app.UseCors(FrontendCors);
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
