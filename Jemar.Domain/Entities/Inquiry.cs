@@ -11,8 +11,8 @@ namespace Jemar.Domain.Entities
         public string? Response { get; set; }
         public string? ClientReply { get; set; }
         public InquiryStatusEnum Status { get; set; }
-        public Guid CreatedByUserId { get; set; }
-        public User CreatedByUser { get; set; } = null!;
+        public Guid? CreatedByUserId { get; set; }
+        public User? CreatedByUser { get; set; }
         public Guid? RespondedByUserId { get; set; }
         public User? RespondedByUser { get; set; }
     }

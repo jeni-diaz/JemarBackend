@@ -49,19 +49,27 @@ namespace Jemar.Aplication.Services
             return inquiry.ToInquiryResponse();
         }
 
-        public async Task<InquiryResponse> CreateAsync(CreateInquiryRequest request, Guid clientId)
+        public async Task<InquiryResponse> CreateAsync(CreateInquiryRequest request, Guid? clientId)
         {
             if (string.IsNullOrWhiteSpace(request.Message))
                 throw new ValidationException("El mensaje es requerido.");
 
-            var user = await _userRepository.GetByIdAsync(clientId);
-            if (user == null)
-                throw new NotFoundException("Cliente no encontrado.");
+            if (string.IsNullOrWhiteSpace(request.FirstName) ||
+                string.IsNullOrWhiteSpace(request.LastName) ||
+                string.IsNullOrWhiteSpace(request.Email))
+                throw new ValidationException("Nombre, apellido y email son requeridos.");
 
-            if (user.RoleId != (int)UserRoleEnum.Client)
-                throw new UnauthorizedException("Solo los clientes pueden crear consultas.");
+            // La consulta puede ser anónima. Si viene un usuario logueado válido,
+            // dejamos el rastro de quién la hizo; el nombre/email siempre salen del formulario.
+            Guid? createdByUserId = null;
+            if (clientId.HasValue && clientId.Value != Guid.Empty)
+            {
+                var user = await _userRepository.GetByIdAsync(clientId.Value);
+                if (user != null)
+                    createdByUserId = user.Id;
+            }
 
-            var inquiry = request.ToInquiry(user);
+            var inquiry = request.ToInquiry(createdByUserId);
             var saved = await _inquiryRepository.AddAsync(inquiry);
             return saved.ToInquiryResponse();
         }

@@ -7,19 +7,19 @@ namespace Jemar.Aplication.Mapper
 {
     public static class InquiryMapper
     {
-        public static Inquiry ToInquiry(this CreateInquiryRequest request, User client)
+        public static Inquiry ToInquiry(this CreateInquiryRequest request, Guid? createdByUserId)
         {
             return new Inquiry
             {
                 Id = Guid.NewGuid(),
-                FirstName = client.FirstName,
-                LastName = client.LastName,
-                Email = client.Email,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Email = request.Email,
                 Message = request.Message,
                 Status = InquiryStatusEnum.New,
-                CreatedByUserId = client.Id,
+                CreatedByUserId = createdByUserId,
                 IsDeleted = false,
-                CreatedDateTime = DateTime.UtcNow,  
+                CreatedDateTime = DateTime.UtcNow,
                 UpdatedDateTime = DateTime.UtcNow
             };
         }
