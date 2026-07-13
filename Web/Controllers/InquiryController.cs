@@ -40,9 +40,10 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
         public async Task<ActionResult<InquiryResponse>> Create(CreateInquiryRequest request)
         {
-            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var userId = HttpContext.Items["UserId"] as Guid?;
             var inquiry = await _inquiryService.CreateAsync(request, userId);
             return Ok(inquiry);
         }
