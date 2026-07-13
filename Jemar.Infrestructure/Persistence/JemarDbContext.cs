@@ -27,6 +27,10 @@ namespace Jemar.Infrastructure.Persistence
                 .HasForeignKey(u => u.RoleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<User>()
+                .Property(u => u.IsTwoFactorEnabled)
+                .HasDefaultValue(true);
+
             modelBuilder.Entity<Shipment>()
                 .HasOne(s => s.CreatedByUser)
                 .WithMany(u => u.CreatedShipments)
