@@ -25,7 +25,9 @@ const string FrontendCors = "FrontendDev";
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCors, policy =>
-        policy.WithOrigins("http://localhost:5174") // Vite dev server
+        policy.WithOrigins(
+                  "http://localhost:5174", // Vite dev server
+                  "https://nice-mushroom-00666e20f.7.azurestaticapps.net") // Azure Static Web App (prod)
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
