@@ -6,6 +6,7 @@ using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
 using Jemar.Domain.Entities;
 using Jemar.Domain.Enums;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -21,15 +22,38 @@ namespace Jemar.Aplication.Services
         private readonly IUserRepository _userRepository;
         private readonly ITokenService _tokenService;
         private readonly IEmailService _emailService;
+        private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             IUserRepository userRepository,
             ITokenService tokenService,
-            IEmailService emailService)
+            IEmailService emailService,
+            ILogger<AuthService> logger)
         {
             _userRepository = userRepository;
             _tokenService = tokenService;
             _emailService = emailService;
+            _logger = logger;
+        }
+
+        // Envía el email sin bloquear la respuesta HTTP. El envío por SMTP puede
+        // tardar varios segundos; con fire-and-forget respondemos al instante y
+        // el correo sale en segundo plano. EmailService solo depende de
+        // IConfiguration (singleton), así que es seguro usarlo fuera del scope
+        // de la request. Si falla, lo dejamos registrado en el log.
+        private void SendEmailInBackground(string toEmail, string subject, string htmlBody)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendAsync(toEmail, subject, htmlBody);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "No se pudo enviar el email a {Email}.", toEmail);
+                }
+            });
         }
 
         public async Task<AuthResponse?> SignInAsync(SignInRequest request)
@@ -55,7 +79,7 @@ namespace Jemar.Aplication.Services
                 user.UpdatedDateTime = DateTime.UtcNow;
                 await _userRepository.UpdateAsync(user);
 
-                await _emailService.SendAsync(
+                SendEmailInBackground(
                     user.Email,
                     "Verificá tu email - Jemar Envíos",
                     BuildEmailVerificationEmail(user.FirstName, verificationCode, EmailVerificationCodeMinutes));
@@ -81,7 +105,7 @@ namespace Jemar.Aplication.Services
             user.UpdatedDateTime = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
 
-            await _emailService.SendAsync(
+            SendEmailInBackground(
                 user.Email,
                 "Tu código de verificación - Jemar Envíos",
                 BuildTwoFactorEmail(user.FirstName, code, TwoFactorCodeMinutes));
@@ -160,7 +184,7 @@ namespace Jemar.Aplication.Services
 
             var saved = await _userRepository.AddAsync(user);
 
-            await _emailService.SendAsync(
+            SendEmailInBackground(
                 saved.Email,
                 "Verificá tu email - Jemar Envíos",
                 BuildEmailVerificationEmail(saved.FirstName, code, EmailVerificationCodeMinutes));
@@ -198,7 +222,7 @@ namespace Jemar.Aplication.Services
             user.UpdatedDateTime = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
 
-            await _emailService.SendAsync(
+            SendEmailInBackground(
                 user.Email,
                 "Restablecé tu contraseña - Jemar Envíos",
                 BuildPasswordResetEmail(user.FirstName, code, PasswordResetCodeMinutes));

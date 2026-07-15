@@ -1,0 +1,30 @@
+name: Keep backend warm
+
+# Mantiene el App Service (plan Free) despierto pegándole cada ~13 minutos,
+# para evitar el "cold start" que hace que el primer login/registro tarde.
+# Nota: los cron de GitHub Actions pueden demorarse en planes gratuitos, así
+# que no es 100% preciso, pero reduce bastante los arranques en frío.
+# No toca la base de datos a propósito: mantener la Azure SQL serverless
+# siempre despierta consumiría el presupuesto gratuito.
+
+on:
+  schedule:
+    - cron: "*/13 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend
+        run: |
+          echo "Pinging backend at $(date -u)"
+          code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
+            "https://jemar-dev-webapp-egf5b0ejdcggc7bd.centralus-01.azurewebsites.net/" || echo "000")
+          echo "HTTP status: $code"
+          # Cualquier respuesta del servidor (incluido 404) significa que la app
+          # está despierta; solo fallamos si no hubo respuesta (timeout/caída).
+          if [ "$code" = "000" ]; then
+            echo "El backend no respondió." >&2
+            exit 1
+          fi
