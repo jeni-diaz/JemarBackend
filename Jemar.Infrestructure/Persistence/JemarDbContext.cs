@@ -29,7 +29,7 @@ namespace Jemar.Infrastructure.Persistence
 
             modelBuilder.Entity<User>()
                 .Property(u => u.IsTwoFactorEnabled)
-                .HasDefaultValue(true);
+                .HasDefaultValue(false);
 
             modelBuilder.Entity<Shipment>()
                 .HasOne(s => s.CreatedByUser)

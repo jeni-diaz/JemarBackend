@@ -10,5 +10,9 @@ namespace Jemar.Aplication.Responses
         // Cuando es true, el login fue correcto pero falta verificar el
         // código de doble factor enviado por email (Token viene vacío).
         public bool RequiresTwoFactor { get; set; }
+
+        // Cuando es true, la cuenta existe pero el email todavía no fue
+        // verificado: enviamos un código y el frontend debe pedirlo (Token vacío).
+        public bool RequiresEmailVerification { get; set; }
     }
 }
