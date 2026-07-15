@@ -14,8 +14,14 @@ namespace Jemar.Domain.Entities
         public string? PasswordResetCode { get; set; }
         public DateTime? PasswordResetCodeExpiresAt { get; set; }
 
-        // Doble factor de autenticación por email (OTP guardado hasheado)
-        public bool IsTwoFactorEnabled { get; set; } = true;
+        // Verificación de email: el usuario confirma el código que le enviamos
+        // al registrarse. Hasta que no lo haga, no puede iniciar sesión.
+        public bool IsEmailVerified { get; set; }
+
+        // Doble factor opcional por email (OTP guardado hasheado). Desactivado por
+        // defecto: el código de un solo uso se usa para verificar el email al
+        // registrarse, no en cada inicio de sesión.
+        public bool IsTwoFactorEnabled { get; set; }
         public string? TwoFactorCode { get; set; }
         public DateTime? TwoFactorCodeExpiresAt { get; set; }
 

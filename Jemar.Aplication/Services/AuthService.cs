@@ -16,6 +16,7 @@ namespace Jemar.Aplication.Services
     {
         private const int TwoFactorCodeMinutes = 5;
         private const int PasswordResetCodeMinutes = 15;
+        private const int EmailVerificationCodeMinutes = 15;
 
         private readonly IUserRepository _userRepository;
         private readonly ITokenService _tokenService;
@@ -42,6 +43,32 @@ namespace Jemar.Aplication.Services
 
             if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
                 throw new UnauthorizedException("Email o contraseña incorrectos.");
+
+            // El email tiene que estar verificado para poder iniciar sesión. Si no
+            // lo está (registro sin completar), reenviamos el código y le pedimos al
+            // frontend que muestre el paso de verificación.
+            if (!user.IsEmailVerified)
+            {
+                var verificationCode = GenerateNumericCode();
+                user.TwoFactorCode = BCrypt.Net.BCrypt.HashPassword(verificationCode);
+                user.TwoFactorCodeExpiresAt = DateTime.UtcNow.AddMinutes(EmailVerificationCodeMinutes);
+                user.UpdatedDateTime = DateTime.UtcNow;
+                await _userRepository.UpdateAsync(user);
+
+                await _emailService.SendAsync(
+                    user.Email,
+                    "Verificá tu email - Jemar Envíos",
+                    BuildEmailVerificationEmail(user.FirstName, verificationCode, EmailVerificationCodeMinutes));
+
+                return new AuthResponse
+                {
+                    Token = string.Empty,
+                    Email = user.Email,
+                    Role = user.Role?.Name.ToString() ?? ((UserRoleEnum)user.RoleId).ToString(),
+                    UserId = user.Id,
+                    RequiresEmailVerification = true
+                };
+            }
 
             // Si el usuario no tiene 2FA habilitado, devolvemos el token directo.
             if (!user.IsTwoFactorEnabled)
@@ -86,9 +113,12 @@ namespace Jemar.Aplication.Services
             if (!BCrypt.Net.BCrypt.Verify(request.Code.Trim(), user.TwoFactorCode))
                 throw new UnauthorizedException("Código inválido o expirado.");
 
-            // Código consumido: lo limpiamos para que no se pueda reutilizar.
+            // Código consumido: lo limpiamos para que no se pueda reutilizar. Al
+            // verificar el código damos por confirmado el email (sirve tanto para
+            // la verificación de registro como para el 2FA opcional de login).
             user.TwoFactorCode = null;
             user.TwoFactorCodeExpiresAt = null;
+            user.IsEmailVerified = true;
             user.UpdatedDateTime = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
 
@@ -119,16 +149,29 @@ namespace Jemar.Aplication.Services
 
             var user = request.ToUser();
             user.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+            // El usuario queda registrado pero sin verificar. Generamos un código,
+            // lo guardamos hasheado y se lo enviamos por email. Recién cuando lo
+            // confirma (verify-2fa) puede iniciar sesión.
+            var code = GenerateNumericCode();
+            user.IsEmailVerified = false;
+            user.TwoFactorCode = BCrypt.Net.BCrypt.HashPassword(code);
+            user.TwoFactorCodeExpiresAt = DateTime.UtcNow.AddMinutes(EmailVerificationCodeMinutes);
+
             var saved = await _userRepository.AddAsync(user);
 
-            var token = _tokenService.GenerateToken(saved);
+            await _emailService.SendAsync(
+                saved.Email,
+                "Verificá tu email - Jemar Envíos",
+                BuildEmailVerificationEmail(saved.FirstName, code, EmailVerificationCodeMinutes));
 
             return new AuthResponse
             {
-                Token = token,
+                Token = string.Empty,
                 Email = saved.Email,
                 Role = ((UserRoleEnum)saved.RoleId).ToString(),
-                UserId = saved.Id
+                UserId = saved.Id,
+                RequiresEmailVerification = true
             };
         }
 
@@ -224,6 +267,16 @@ namespace Jemar.Aplication.Services
             var number = RandomNumberGenerator.GetInt32(0, 1_000_000);
             return number.ToString("D6");
         }
+
+        private static string BuildEmailVerificationEmail(string firstName, string code, int minutes) =>
+            $@"<div style=""font-family:Arial,sans-serif;color:#222"">
+                <h2>Verificá tu email</h2>
+                <p>Hola {firstName},</p>
+                <p>¡Gracias por registrarte en Jemar Envíos! Para activar tu cuenta, ingresá este código:</p>
+                <p style=""font-size:28px;font-weight:bold;letter-spacing:4px"">{code}</p>
+                <p>El código vence en {minutes} minutos. Si no creaste esta cuenta, ignorá este correo.</p>
+                <p>— Jemar Envíos</p>
+            </div>";
 
         private static string BuildTwoFactorEmail(string firstName, string code, int minutes) =>
             $@"<div style=""font-family:Arial,sans-serif;color:#222"">
