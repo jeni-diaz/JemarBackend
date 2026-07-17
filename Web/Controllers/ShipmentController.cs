@@ -39,6 +39,61 @@ namespace Jemar.Presentation.Controllers
             return Ok(shipment);
         }
 
+        [HttpGet("types")]
+        public async Task<ActionResult<List<ShipmentTypeResponse>>> GetShipmentTypes()
+        {
+            var types = await _shipmentService.GetShipmentTypesAsync();
+            return Ok(types);
+        }
+
+        [HttpGet("package-sizes")]
+        public async Task<ActionResult<List<PackageSizeResponse>>> GetPackageSizes()
+        {
+            var sizes = await _shipmentService.GetPackageSizesAsync();
+            return Ok(sizes);
+        }
+
+        [HttpGet("address-search")]
+        public async Task<ActionResult<List<GeocodeResult>>> SearchAddresses([FromQuery] string q)
+        {
+            var results = await _shipmentService.SearchAddressesAsync(q);
+            return Ok(results);
+        }
+
+        [HttpGet("clients")]
+        [Authorize(Policy = Policies.EmployeeOrAbove)]
+        public async Task<ActionResult<List<UserResponse>>> GetClients()
+        {
+            var clients = await _shipmentService.GetClientsAsync();
+            return Ok(clients);
+        }
+
+        [HttpGet("clients/email-exists")]
+        [Authorize(Policy = Policies.EmployeeOrAbove)]
+        public async Task<ActionResult<EmailAvailabilityResponse>> CheckEmail([FromQuery] string email)
+        {
+            var result = await _shipmentService.CheckEmailAsync(email);
+            return Ok(result);
+        }
+
+        [HttpPost("clients")]
+        [Authorize(Policy = Policies.EmployeeOrAbove)]
+        public async Task<ActionResult<UserResponse>> CreateClient(SignUpRequest request)
+        {
+            var client = await _shipmentService.CreateClientAsync(request);
+            return Ok(client);
+        }
+
+        [HttpPost("quote")]
+        public async Task<ActionResult<ShipmentQuoteResponse>> Quote(CreateShipmentRequest request)
+        {
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
+
+            var quote = await _shipmentService.QuoteAsync(request, userId, role);
+            return Ok(quote);
+        }
+
         [HttpPost]
         public async Task<ActionResult<ShipmentResponse>> Create(CreateShipmentRequest request)
         {

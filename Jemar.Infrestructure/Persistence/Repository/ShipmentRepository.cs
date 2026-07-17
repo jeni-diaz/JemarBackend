@@ -48,5 +48,15 @@ namespace Jemar.Infrastructure.Persistence.Repository
         {
             return await _context.PackageSizes.FindAsync(id);
         }
+
+        public async Task<List<ShipmentType>> GetShipmentTypesAsync()
+        {
+            return await _context.ShipmentTypes.ToListAsync();
+        }
+
+        public async Task<List<PackageSize>> GetPackageSizesAsync()
+        {
+            return await _context.PackageSizes.ToListAsync();
+        }
     }
 }

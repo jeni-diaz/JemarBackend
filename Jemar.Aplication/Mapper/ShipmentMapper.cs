@@ -11,7 +11,7 @@ namespace Jemar.Aplication.Mapper
         {
             return new Shipment
             {
-                Id = Guid.NewGuid(),
+                Id = request.Id ?? Guid.NewGuid(),
                 Origin = request.Origin,
                 Destination = request.Destination,
                 ShipmentTypeId = request.ShipmentTypeId,
@@ -48,6 +48,31 @@ namespace Jemar.Aplication.Mapper
         public static List<ShipmentResponse> ToShipmentResponseList(this List<Shipment> shipments)
         {
             return shipments.Select(s => s.ToShipmentResponse()).ToList();
+        }
+
+        public static ShipmentTypeResponse ToShipmentTypeResponse(this ShipmentType shipmentType)
+        {
+            return new ShipmentTypeResponse
+            {
+                Id = shipmentType.Id,
+                Name = shipmentType.Name.ToString(),
+                Description = shipmentType.Description
+            };
+        }
+
+        public static PackageSizeResponse ToPackageSizeResponse(this PackageSize packageSize)
+        {
+            return new PackageSizeResponse
+            {
+                Id = packageSize.Id,
+                Name = packageSize.Name.ToString(),
+                MaxLengthCm = packageSize.MaxLengthCm,
+                MaxWidthCm = packageSize.MaxWidthCm,
+                MaxHeightCm = packageSize.MaxHeightCm,
+                BasePrice = packageSize.BasePrice,
+                RatePerKm = packageSize.RatePerKm,
+                Surcharge = packageSize.Surcharge
+            };
         }
     }
 }
