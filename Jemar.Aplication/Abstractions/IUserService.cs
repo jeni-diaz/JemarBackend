@@ -11,6 +11,7 @@ namespace Jemar.Aplication.Abstractions
         Task<List<UserResponse>> GetAllAsync();
         Task<UserResponse?> GetByEmailAsync(string email);
         Task<UserResponse> CreateAsync(CreateUserRequest request);
+        Task<UserResponse> CreateClientAsync(SignUpRequest request);
         Task<bool> UpdateRoleAsync(UpdateUserRoleRequest request);
         Task<bool> DeleteAsync(string email);
     }

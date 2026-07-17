@@ -1,5 +1,6 @@
 ﻿using Jemar.Aplication.Abstractions.Infrastructure;
 using Jemar.Domain.Entities;
+using Jemar.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -34,6 +35,14 @@ namespace Jemar.Infrastructure.Persistence.Repository
             return await _context.Users
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
+        }
+
+        public async Task<List<User>> GetByRoleAsync(UserRoleEnum role)
+        {
+            return await _context.Users
+                .Include(u => u.Role)
+                .Where(u => u.RoleId == (int)role && !u.IsDeleted)
+                .ToListAsync();
         }
     }
 }

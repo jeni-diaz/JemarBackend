@@ -1,4 +1,5 @@
 ﻿using Jemar.Domain.Entities;
+using Jemar.Domain.Enums;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -9,5 +10,6 @@ namespace Jemar.Aplication.Abstractions.Infrastructure
     public interface IUserRepository : IBaseRepository<User>
     {
         Task<User?> GetByEmailAsync(string email);
+        Task<List<User>> GetByRoleAsync(UserRoleEnum role);
     }
 }
