@@ -192,7 +192,13 @@ builder.Services.AddScoped<IShipmentService, ShipmentService>();
 builder.Services.AddScoped<IInquiryService, InquiryService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+// En Azure (App Service Free) el SMTP saliente está bloqueado, así que si hay
+// configuración de Azure Communication Services se envía por su API HTTP; en
+// local, sin esa config, se usa SMTP.
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Communication:ConnectionString"]))
+    builder.Services.AddScoped<IEmailService, AcsEmailService>();
+else
+    builder.Services.AddScoped<IEmailService, EmailService>();
 
 var app = builder.Build();
 
