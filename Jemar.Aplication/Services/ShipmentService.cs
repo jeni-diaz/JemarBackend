@@ -270,9 +270,6 @@ namespace Jemar.Aplication.Services
 
         public async Task<bool> UpdateStatusAsync(Guid id, UpdateShipmentRequest request, Guid currentUserId, string currentUserRole)
         {
-            if (currentUserRole == UserRoleEnum.Client.ToString())
-                throw new UnauthorizedAccessException("Los clientes no están autorizados a actualizar el estado del envío.");
-
             var shipment = await _shipmentRepository.GetByIdAsync(id);
             if (shipment == null)
                 throw new NotFoundException("Envío no encontrado.");
@@ -280,23 +277,39 @@ namespace Jemar.Aplication.Services
             int currentStatus = shipment.ShipmentStatusId;
             int nextStatus = request.ShipmentStatusId;
 
-            if (currentStatus == (int)ShipmentStatusEnum.Pending)
+            if (currentUserRole == UserRoleEnum.Client.ToString())
             {
-                if (nextStatus != (int)ShipmentStatusEnum.InTransit && nextStatus != (int)ShipmentStatusEnum.Cancelled)
-                    throw new ValidationException("Un envío pendiente solo puede pasar al estado En tránsito o Cancelado.");
+                // El cliente solo puede cancelar su propio envío, y solo mientras
+                // sigue pendiente (todavía no salió a transitar).
+                bool isOwner = shipment.CreatedByUserId == currentUserId ||
+                               shipment.OnBehalfOfClientId == currentUserId;
+                if (!isOwner)
+                    throw new UnauthorizedAccessException("No tiene autorización para modificar este envío.");
+
+                if (currentStatus != (int)ShipmentStatusEnum.Pending || nextStatus != (int)ShipmentStatusEnum.Cancelled)
+                    throw new ValidationException("Los clientes solo pueden cancelar envíos que todavía están pendientes.");
             }
-            else if (currentStatus == (int)ShipmentStatusEnum.InTransit)
+            else
             {
-                if (nextStatus != (int)ShipmentStatusEnum.Delivered && nextStatus != (int)ShipmentStatusEnum.Cancelled)
-                    throw new ValidationException("Un envío En tránsito solo puede pasar al estado de Entregado o Cancelado.");
-            }
-            else if (currentStatus == (int)ShipmentStatusEnum.Delivered)
-            {
-                throw new ValidationException("No se puede modificar el estado de un envío Entregado.");
-            }
-            else if (currentStatus == (int)ShipmentStatusEnum.Cancelled)
-            {
-                throw new ValidationException("El estado de un envío Cancelado no se puede modificar.");
+                // Empleado/SuperAdmin: máquina de estados completa, sobre cualquier envío.
+                if (currentStatus == (int)ShipmentStatusEnum.Pending)
+                {
+                    if (nextStatus != (int)ShipmentStatusEnum.InTransit && nextStatus != (int)ShipmentStatusEnum.Cancelled)
+                        throw new ValidationException("Un envío pendiente solo puede pasar al estado En tránsito o Cancelado.");
+                }
+                else if (currentStatus == (int)ShipmentStatusEnum.InTransit)
+                {
+                    if (nextStatus != (int)ShipmentStatusEnum.Delivered && nextStatus != (int)ShipmentStatusEnum.Cancelled)
+                        throw new ValidationException("Un envío En tránsito solo puede pasar al estado de Entregado o Cancelado.");
+                }
+                else if (currentStatus == (int)ShipmentStatusEnum.Delivered)
+                {
+                    throw new ValidationException("No se puede modificar el estado de un envío Entregado.");
+                }
+                else if (currentStatus == (int)ShipmentStatusEnum.Cancelled)
+                {
+                    throw new ValidationException("El estado de un envío Cancelado no se puede modificar.");
+                }
             }
 
             shipment.ShipmentStatusId = nextStatus;
