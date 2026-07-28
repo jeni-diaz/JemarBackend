@@ -27,6 +27,9 @@ namespace Jemar.Aplication.Mapper
 
         public static ShipmentResponse ToShipmentResponse(this Shipment shipment)
         {
+            // Dueño del envío: el cliente a nombre de quien se creó, o el creador.
+            var client = shipment.OnBehalfOfClient ?? shipment.CreatedByUser;
+
             return new ShipmentResponse
             {
                 Id = shipment.Id,
@@ -37,6 +40,8 @@ namespace Jemar.Aplication.Mapper
                 ShipmentType = shipment.ShipmentType?.Name.ToString() ?? string.Empty,
                 ShipmentStatus = shipment.ShipmentStatus?.Name.ToString() ?? string.Empty,
                 PackageSize = shipment.PackageSize?.Name.ToString() ?? string.Empty,
+                ClientName = client != null ? $"{client.FirstName} {client.LastName}".Trim() : string.Empty,
+                ClientEmail = client?.Email ?? string.Empty,
                 CreatedByUserId = shipment.CreatedByUserId,
                 CreatedByRoleId = shipment.CreatedByRoleId,
                 OnBehalfOfClientId = shipment.OnBehalfOfClientId,

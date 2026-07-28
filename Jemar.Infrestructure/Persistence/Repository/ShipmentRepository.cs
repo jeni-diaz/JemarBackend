@@ -16,6 +16,8 @@ namespace Jemar.Infrastructure.Persistence.Repository
                 .Include(s => s.ShipmentType)
                 .Include(s => s.ShipmentStatus)
                 .Include(s => s.PackageSize)
+                .Include(s => s.CreatedByUser)
+                .Include(s => s.OnBehalfOfClient)
                 .Where(s => !s.IsDeleted)
                 .ToListAsync();
         }
@@ -26,6 +28,8 @@ namespace Jemar.Infrastructure.Persistence.Repository
                 .Include(s => s.ShipmentType)
                 .Include(s => s.ShipmentStatus)
                 .Include(s => s.PackageSize)
+                .Include(s => s.CreatedByUser)
+                .Include(s => s.OnBehalfOfClient)
                 .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
         }
 
@@ -35,6 +39,8 @@ namespace Jemar.Infrastructure.Persistence.Repository
                 .Include(s => s.ShipmentType)
                 .Include(s => s.ShipmentStatus)
                 .Include(s => s.PackageSize)
+                .Include(s => s.CreatedByUser)
+                .Include(s => s.OnBehalfOfClient)
                 .Where(s => (s.CreatedByUserId == clientId || s.OnBehalfOfClientId == clientId) && !s.IsDeleted)
                 .ToListAsync();
         }
