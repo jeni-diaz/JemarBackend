@@ -161,7 +161,12 @@ namespace Jemar.Aplication.Services
 
                 var subject = $"Envío N° {shipment.Id} confirmado - Jemar Envíos";
                 var body = BuildShipmentEmail(recipient.FirstName, shipment);
-                await _emailService.SendAsync(recipient.Email, subject, body);
+                var inlineImages = new Dictionary<string, byte[]>
+                {
+                    ["logo"] = LogoImage.Value,
+                    ["robot"] = RobotImage.Value
+                };
+                await _emailService.SendAsync(recipient.Email, subject, body, inlineImages);
             }
             catch (Exception ex)
             {
@@ -169,29 +174,98 @@ namespace Jemar.Aplication.Services
             }
         }
 
+        // Assets del correo (logo + mascota) embebidos en el assembly. Se cargan
+        // una sola vez y se incrustan por CID (cid:logo / cid:robot).
+        private static readonly Lazy<byte[]> LogoImage = new(() => LoadEmailAsset("logo.png"));
+        private static readonly Lazy<byte[]> RobotImage = new(() => LoadEmailAsset("robot.png"));
+
+        private static byte[] LoadEmailAsset(string fileName)
+        {
+            var assembly = typeof(ShipmentService).Assembly;
+            var resourceName = $"Jemar.Aplication.EmailAssets.{fileName}";
+            using var stream = assembly.GetManifestResourceStream(resourceName)
+                ?? throw new InvalidOperationException($"No se encontró el recurso embebido '{resourceName}'.");
+            using var memory = new MemoryStream();
+            stream.CopyTo(memory);
+            return memory.ToArray();
+        }
+
         private static string BuildShipmentEmail(string firstName, Shipment shipment)
         {
-            var type = shipment.ShipmentType?.Name.ToString() ?? string.Empty;
-            var size = shipment.PackageSize?.Name.ToString() ?? string.Empty;
-            var status = shipment.ShipmentStatus?.Name.ToString() ?? string.Empty;
+            // Paleta de la marca (misma que usa el front).
+            const string gold = "#B07F11";
+            const string dark = "#000000";
+            const string green = "#3f7f07";
+            const string red = "#b01b17";
+
+            var type = shipment.ShipmentType?.Name.ToSpanish() ?? string.Empty;
+            var size = shipment.PackageSize?.Name.ToSpanish() ?? string.Empty;
+            var status = shipment.ShipmentStatus?.Name.ToSpanish() ?? string.Empty;
             var price = shipment.Price.ToString("N2", new System.Globalization.CultureInfo("es-AR"));
 
-            return $@"<div style=""font-family:Arial,sans-serif;color:#222"">
-                <h2>¡Tu envío fue confirmado!</h2>
-                <p>Hola {firstName},</p>
-                <p>Guardá este número de envío, lo vas a necesitar para futuras consultas:</p>
-                <p style=""font-size:20px;font-weight:bold"">Envío N° {shipment.Id}</p>
-                <table style=""border-collapse:collapse"" cellpadding=""6"">
-                    <tr><td style=""font-weight:bold"">Tipo de envío</td><td>{type}</td></tr>
-                    <tr><td style=""font-weight:bold"">Tamaño del paquete</td><td>{size}</td></tr>
-                    <tr><td style=""font-weight:bold"">Origen</td><td>{shipment.Origin}</td></tr>
-                    <tr><td style=""font-weight:bold"">Destino</td><td>{shipment.Destination}</td></tr>
-                    <tr><td style=""font-weight:bold"">Distancia</td><td>{shipment.DistanceKm} km</td></tr>
-                    <tr><td style=""font-weight:bold"">Precio</td><td>${price}</td></tr>
-                    <tr><td style=""font-weight:bold"">Estado</td><td>{status}</td></tr>
-                </table>
-                <p>— Jemar Envíos</p>
-            </div>";
+            // Color del estado igual que en la tabla del front.
+            var statusColor = shipment.ShipmentStatus?.Name switch
+            {
+                ShipmentStatusEnum.Delivered => green,
+                ShipmentStatusEnum.Cancelled => red,
+                _ => gold
+            };
+
+            // Fila de detalle reutilizable (label en negrita + valor).
+            string Row(string label, string value, string valueColor = "#222222") => $@"
+                <tr>
+                    <td style=""padding:10px 16px;border-bottom:1px solid #eeeeee;font-weight:bold;color:{dark};white-space:nowrap"">{label}</td>
+                    <td style=""padding:10px 16px;border-bottom:1px solid #eeeeee;color:{valueColor}"">{value}</td>
+                </tr>";
+
+            return $@"
+<div style=""margin:0;padding:24px 12px;background-color:#f4f4f4;font-family:Arial,Helvetica,sans-serif"">
+  <table role=""presentation"" width=""600"" cellpadding=""0"" cellspacing=""0"" align=""center"" style=""max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e0e0e0"">
+    <tr>
+      <td style=""background-color:{dark};padding:24px;text-align:center"">
+        <img src=""cid:logo"" width=""130"" alt=""Jemar Envíos"" style=""display:inline-block;border:0"" />
+      </td>
+    </tr>
+    <tr>
+      <td style=""padding:28px 24px 8px;text-align:center"">
+        <img src=""cid:robot"" width=""110"" alt="""" style=""display:inline-block;border:0"" />
+        <h1 style=""margin:12px 0 4px;color:{green};font-size:24px"">¡Tu envío fue confirmado!</h1>
+        <p style=""margin:0;color:#555555;font-size:15px"">Hola {firstName}, guardá este número para futuras consultas:</p>
+      </td>
+    </tr>
+    <tr>
+      <td style=""padding:16px 24px 4px;text-align:center"">
+        <div style=""display:inline-block;border:2px solid {gold};border-radius:10px;padding:10px 18px"">
+          <span style=""display:block;color:{gold};font-weight:bold;font-size:13px;letter-spacing:1px"">ENVÍO N°</span>
+          <span style=""display:block;color:{dark};font-family:'Courier New',monospace;font-size:16px;word-break:break-all"">{shipment.Id}</span>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td style=""padding:20px 24px 4px"">
+        <table role=""presentation"" width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""border-collapse:collapse;font-size:15px"">
+          {Row("Tipo de envío", type)}
+          {Row("Tamaño del paquete", size)}
+          {Row("Origen", shipment.Origin)}
+          {Row("Destino", shipment.Destination)}
+          {Row("Distancia", $"{shipment.DistanceKm} km")}
+          {Row("Estado", $"<strong>{status}</strong>", statusColor)}
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style=""padding:12px 24px 28px;text-align:center"">
+        <span style=""display:block;color:{gold};font-weight:bold;font-size:14px;letter-spacing:1px"">PRECIO</span>
+        <span style=""display:block;color:{gold};font-weight:bold;font-size:34px;line-height:1.2"">${price}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style=""background-color:{dark};padding:16px;text-align:center;color:{gold};font-size:14px;font-weight:bold;letter-spacing:1px"">
+        — Jemar Envíos
+      </td>
+    </tr>
+  </table>
+</div>";
         }
 
         public async Task<bool> UpdateStatusAsync(Guid id, UpdateShipmentRequest request, Guid currentUserId, string currentUserRole)
