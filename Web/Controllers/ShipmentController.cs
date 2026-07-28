@@ -105,7 +105,7 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPut("{id}/status")]
-        [Authorize(Policy = Policies.EmployeeOrAbove)]
+        [Authorize(Policy = Policies.ClientOrAbove)]
         public async Task<IActionResult> UpdateStatus(Guid id, UpdateShipmentRequest request)
         {
             var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
