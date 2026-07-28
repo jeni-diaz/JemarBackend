@@ -1,7 +1,10 @@
 using Jemar.Aplication.Abstractions;
 using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
 using System.Threading.Tasks;
 
 namespace Jemar.Infrastructure.Services
@@ -15,7 +18,11 @@ namespace Jemar.Infrastructure.Services
             _config = config;
         }
 
-        public async Task SendAsync(string toEmail, string subject, string htmlBody)
+        public async Task SendAsync(
+            string toEmail,
+            string subject,
+            string htmlBody,
+            IReadOnlyDictionary<string, byte[]>? inlineImages = null)
         {
             var host = _config["Email:Host"]
                 ?? throw new InvalidOperationException("La configuración 'Email:Host' no existe.");
@@ -31,11 +38,35 @@ namespace Jemar.Infrastructure.Services
             using var message = new MailMessage
             {
                 From = new MailAddress(fromAddress, fromName),
-                Subject = subject,
-                Body = htmlBody,
-                IsBodyHtml = true
+                Subject = subject
             };
             message.To.Add(new MailAddress(toEmail));
+
+            if (inlineImages != null && inlineImages.Count > 0)
+            {
+                // Con imágenes incrustadas el cuerpo va como AlternateView HTML y
+                // cada imagen como LinkedResource, referenciada desde el HTML por
+                // su Content-ID (<img src="cid:clave">).
+                var htmlView = AlternateView.CreateAlternateViewFromString(
+                    htmlBody, null, MediaTypeNames.Text.Html);
+
+                foreach (var image in inlineImages)
+                {
+                    var resource = new LinkedResource(new MemoryStream(image.Value), "image/png")
+                    {
+                        ContentId = image.Key,
+                        TransferEncoding = TransferEncoding.Base64
+                    };
+                    htmlView.LinkedResources.Add(resource);
+                }
+
+                message.AlternateViews.Add(htmlView);
+            }
+            else
+            {
+                message.Body = htmlBody;
+                message.IsBodyHtml = true;
+            }
 
             // SmtpClient está marcado obsoleto pero sigue siendo funcional y
             // suficiente para SMTP con STARTTLS (Gmail, Outlook, etc.).
