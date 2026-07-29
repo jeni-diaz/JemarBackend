@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
@@ -20,6 +21,7 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("AuthSensitive")]
         public async Task<ActionResult<AuthResponse>> Login(SignInRequest request)
         {
             var response = await _authService.SignInAsync(request);
@@ -32,6 +34,7 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost("verify-2fa")]
+        [EnableRateLimiting("AuthSensitive")]
         public async Task<ActionResult<AuthResponse>> VerifyTwoFactor(VerifyTwoFactorRequest request)
         {
             var response = await _authService.VerifyTwoFactorAsync(request);
@@ -46,6 +49,7 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost("forgot-password")]
+        [EnableRateLimiting("AuthSensitive")]
         public async Task<ActionResult<MessageResponse>> ForgotPassword(ForgotPasswordRequest request)
         {
             var response = await _authService.ForgotPasswordAsync(request);
@@ -53,6 +57,7 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost("reset-password")]
+        [EnableRateLimiting("AuthSensitive")]
         public async Task<ActionResult<MessageResponse>> ResetPassword(ResetPasswordRequest request)
         {
             var response = await _authService.ResetPasswordAsync(request);

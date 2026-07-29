@@ -11,10 +11,12 @@ using Jemar.Presentation.Authorization;
 using Jemar.Presentation.Middleware;
 using Jemar.Presentation.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -201,6 +203,24 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["Communication:ConnectionSt
 else
     builder.Services.AddScoped<IEmailService, EmailService>();
 
+// Los endpoints de auth que aceptan credenciales o códigos (login, 2FA,
+// reset de contraseña) son el blanco típico de fuerza bruta. Limitamos por
+// IP + endpoint para que agotar el cupo de uno no bloquee a los demás.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("AuthSensitive", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: $"{httpContext.Request.Path}:{httpContext.Connection.RemoteIpAddress}",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
 var app = builder.Build();
 
 app.MapOpenApi();
@@ -210,6 +230,8 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 
 app.UseCors(FrontendCors);
+
+app.UseRateLimiter();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
