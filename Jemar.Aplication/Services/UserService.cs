@@ -80,7 +80,6 @@ namespace Jemar.Aplication.Services
                 RoleId = (int)UserRoleEnum.Client,
                 IsActive = true,
                 IsEmailVerified = true,
-                IsTwoFactorEnabled = false,
                 CreatedDateTime = DateTime.UtcNow,
                 UpdatedDateTime = DateTime.UtcNow
             };

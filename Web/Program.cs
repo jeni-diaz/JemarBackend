@@ -183,6 +183,7 @@ builder.Services.AddHttpClient<IOpenStreetMapService, OpenStreetMapService>(clie
 });
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITrustedDeviceRepository, TrustedDeviceRepository>();
 builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IInquiryRepository, InquiryRepository>();

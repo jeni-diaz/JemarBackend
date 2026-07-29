@@ -16,6 +16,7 @@ namespace Jemar.Infrastructure.Persistence
         public DbSet<ShipmentStatus> ShipmentStatuses { get; set; }
         public DbSet<PackageSize> PackageSizes { get; set; }
         public DbSet<Inquiry> Inquiries { get; set; }
+        public DbSet<TrustedDevice> TrustedDevices { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,9 +28,11 @@ namespace Jemar.Infrastructure.Persistence
                 .HasForeignKey(u => u.RoleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<User>()
-                .Property(u => u.IsTwoFactorEnabled)
-                .HasDefaultValue(false);
+            modelBuilder.Entity<TrustedDevice>()
+                .HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Shipment>()
                 .HasOne(s => s.CreatedByUser)

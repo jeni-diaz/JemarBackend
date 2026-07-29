@@ -18,7 +18,6 @@ namespace Jemar.Aplication.Mapper
                 RoleId = (int)UserRoleEnum.Client,
                 IsActive = true,
                 IsEmailVerified = false,
-                IsTwoFactorEnabled = false,
                 CreatedDateTime = DateTime.UtcNow,
                 UpdatedDateTime = DateTime.UtcNow
             };
