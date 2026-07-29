@@ -18,10 +18,9 @@ namespace Jemar.Domain.Entities
         // al registrarse. Hasta que no lo haga, no puede iniciar sesión.
         public bool IsEmailVerified { get; set; }
 
-        // Doble factor opcional por email (OTP guardado hasheado). Desactivado por
-        // defecto: el código de un solo uso se usa para verificar el email al
-        // registrarse, no en cada inicio de sesión.
-        public bool IsTwoFactorEnabled { get; set; }
+        // Doble factor por email (OTP guardado hasheado). Se usa tanto para
+        // verificar el email al registrarse como para el código de login
+        // cuando el navegador todavía no es de confianza (ver TrustedDevice).
         public string? TwoFactorCode { get; set; }
         public DateTime? TwoFactorCodeExpiresAt { get; set; }
 

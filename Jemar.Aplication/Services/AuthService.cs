@@ -18,19 +18,23 @@ namespace Jemar.Aplication.Services
         private const int TwoFactorCodeMinutes = 5;
         private const int PasswordResetCodeMinutes = 15;
         private const int EmailVerificationCodeMinutes = 15;
+        private const int TrustedDeviceDays = 30;
 
         private readonly IUserRepository _userRepository;
+        private readonly ITrustedDeviceRepository _trustedDeviceRepository;
         private readonly ITokenService _tokenService;
         private readonly IEmailService _emailService;
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             IUserRepository userRepository,
+            ITrustedDeviceRepository trustedDeviceRepository,
             ITokenService tokenService,
             IEmailService emailService,
             ILogger<AuthService> logger)
         {
             _userRepository = userRepository;
+            _trustedDeviceRepository = trustedDeviceRepository;
             _tokenService = tokenService;
             _emailService = emailService;
             _logger = logger;
@@ -94,8 +98,9 @@ namespace Jemar.Aplication.Services
                 };
             }
 
-            // Si el usuario no tiene 2FA habilitado, devolvemos el token directo.
-            if (!user.IsTwoFactorEnabled)
+            // Si el navegador ya es de confianza (verificó 2FA hace menos de
+            // TrustedDeviceDays), nos salteamos el segundo factor.
+            if (await IsDeviceTrustedAsync(user.Id, request.DeviceToken))
                 return BuildAuthResponse(user, _tokenService.GenerateToken(user));
 
             // Segundo factor: generamos un código, lo guardamos hasheado y lo enviamos por email.
@@ -146,7 +151,21 @@ namespace Jemar.Aplication.Services
             user.UpdatedDateTime = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
 
-            return BuildAuthResponse(user, _tokenService.GenerateToken(user));
+            // Este navegador acaba de probar que tiene acceso al email: lo
+            // marcamos de confianza para no volver a pedir el código en los
+            // próximos TrustedDeviceDays.
+            var deviceToken = GenerateDeviceToken();
+            await _trustedDeviceRepository.AddAsync(new TrustedDevice
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                TokenHash = BCrypt.Net.BCrypt.HashPassword(deviceToken),
+                ExpiresAt = DateTime.UtcNow.AddDays(TrustedDeviceDays)
+            });
+
+            var response = BuildAuthResponse(user, _tokenService.GenerateToken(user));
+            response.DeviceToken = deviceToken;
+            return response;
         }
 
         public async Task<AuthResponse> SignUpAsync(SignUpRequest request)
@@ -290,6 +309,21 @@ namespace Jemar.Aplication.Services
         {
             var number = RandomNumberGenerator.GetInt32(0, 1_000_000);
             return number.ToString("D6");
+        }
+
+        // Token de dispositivo: 32 bytes aleatorios en base64. Solo existe en
+        // texto plano en el momento de generarlo (se devuelve una vez al
+        // frontend); en la base queda guardado hasheado con bcrypt.
+        private static string GenerateDeviceToken() =>
+            Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+        private async Task<bool> IsDeviceTrustedAsync(Guid userId, string? deviceToken)
+        {
+            if (string.IsNullOrWhiteSpace(deviceToken))
+                return false;
+
+            var devices = await _trustedDeviceRepository.GetActiveByUserIdAsync(userId);
+            return devices.Any(d => BCrypt.Net.BCrypt.Verify(deviceToken, d.TokenHash));
         }
 
         private static string BuildEmailVerificationEmail(string firstName, string code, int minutes) =>
