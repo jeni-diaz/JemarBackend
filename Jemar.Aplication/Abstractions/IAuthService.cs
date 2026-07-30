@@ -11,5 +11,7 @@ namespace Jemar.Aplication.Abstractions
         Task<AuthResponse> VerifyTwoFactorAsync(VerifyTwoFactorRequest request);
         Task<MessageResponse> ForgotPasswordAsync(ForgotPasswordRequest request);
         Task<MessageResponse> ResetPasswordAsync(ResetPasswordRequest request);
+        Task<AuthResponse> RefreshAsync(string refreshToken);
+        Task LogoutAsync(string? refreshToken);
     }
 }

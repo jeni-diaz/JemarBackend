@@ -58,8 +58,6 @@ namespace Jemar.Aplication.Services
             return shipment.ToShipmentResponse();
         }
 
-        // Arma el envío (geocodifica, valida y calcula el precio) SIN persistirlo.
-        // Lo usan tanto la cotización (solo lo devuelve) como la creación (lo guarda).
         private async Task<Shipment> BuildShipmentAsync(CreateShipmentRequest request, Guid currentUserId, string currentUserRole)
         {
             var origin = await _openStreetMapService.GeocodeAddressAsync(request.Origin);
@@ -147,9 +145,6 @@ namespace Jemar.Aplication.Services
             return fullyLoadedShipment!.ToShipmentResponse();
         }
 
-        // Envía al cliente el detalle del envío (con el número para consultas futuras).
-        // Si el correo falla, se registra pero NO se interrumpe la creación: el envío
-        // ya quedó guardado.
         private async Task SendShipmentEmailSafeAsync(Shipment shipment, Guid currentUserId)
         {
             try
@@ -174,8 +169,6 @@ namespace Jemar.Aplication.Services
             }
         }
 
-        // Assets del correo (logo + mascota) embebidos en el assembly. Se cargan
-        // una sola vez y se incrustan por CID (cid:logo / cid:robot).
         private static readonly Lazy<byte[]> LogoImage = new(() => LoadEmailAsset("logo.png"));
         private static readonly Lazy<byte[]> RobotImage = new(() => LoadEmailAsset("robot.png"));
 
@@ -192,7 +185,6 @@ namespace Jemar.Aplication.Services
 
         private static string BuildShipmentEmail(string firstName, Shipment shipment)
         {
-            // Paleta de la marca (misma que usa el front).
             const string gold = "#B07F11";
             const string dark = "#000000";
             const string green = "#3f7f07";
@@ -203,7 +195,6 @@ namespace Jemar.Aplication.Services
             var status = shipment.ShipmentStatus?.Name.ToSpanish() ?? string.Empty;
             var price = shipment.Price.ToString("N2", new System.Globalization.CultureInfo("es-AR"));
 
-            // Color del estado igual que en la tabla del front.
             var statusColor = shipment.ShipmentStatus?.Name switch
             {
                 ShipmentStatusEnum.Delivered => green,
@@ -211,7 +202,6 @@ namespace Jemar.Aplication.Services
                 _ => gold
             };
 
-            // Fila de detalle reutilizable (label en negrita + valor).
             string Row(string label, string value, string valueColor = "#222222") => $@"
                 <tr>
                     <td style=""padding:10px 16px;border-bottom:1px solid #eeeeee;font-weight:bold;color:{dark};white-space:nowrap"">{label}</td>
@@ -279,8 +269,6 @@ namespace Jemar.Aplication.Services
 
             if (currentUserRole == UserRoleEnum.Client.ToString())
             {
-                // El cliente solo puede cancelar su propio envío, y solo mientras
-                // sigue pendiente (todavía no salió a transitar).
                 bool isOwner = shipment.CreatedByUserId == currentUserId ||
                                shipment.OnBehalfOfClientId == currentUserId;
                 if (!isOwner)
@@ -291,7 +279,6 @@ namespace Jemar.Aplication.Services
             }
             else
             {
-                // Empleado/SuperAdmin: máquina de estados completa, sobre cualquier envío.
                 if (currentStatus == (int)ShipmentStatusEnum.Pending)
                 {
                     if (nextStatus != (int)ShipmentStatusEnum.InTransit && nextStatus != (int)ShipmentStatusEnum.Cancelled)

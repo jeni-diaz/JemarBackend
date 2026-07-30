@@ -4,10 +4,13 @@ using Jemar.Aplication.Exceptions;
 using Jemar.Aplication.Mapper;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
+using Jemar.Aplication.Validation;
 using Jemar.Domain.Entities;
 using Jemar.Domain.Enums;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -19,32 +22,37 @@ namespace Jemar.Aplication.Services
         private const int PasswordResetCodeMinutes = 15;
         private const int EmailVerificationCodeMinutes = 15;
         private const int TrustedDeviceDays = 30;
+        private const int RefreshTokenDays = 30;
 
         private readonly IUserRepository _userRepository;
         private readonly ITrustedDeviceRepository _trustedDeviceRepository;
+        private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly ITokenService _tokenService;
         private readonly IEmailService _emailService;
+        private readonly FluentValidation.IValidator<SignUpRequest> _signUpValidator;
+        private readonly FluentValidation.IValidator<ResetPasswordRequest> _resetPasswordValidator;
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             IUserRepository userRepository,
             ITrustedDeviceRepository trustedDeviceRepository,
+            IRefreshTokenRepository refreshTokenRepository,
             ITokenService tokenService,
             IEmailService emailService,
+            FluentValidation.IValidator<SignUpRequest> signUpValidator,
+            FluentValidation.IValidator<ResetPasswordRequest> resetPasswordValidator,
             ILogger<AuthService> logger)
         {
             _userRepository = userRepository;
             _trustedDeviceRepository = trustedDeviceRepository;
+            _refreshTokenRepository = refreshTokenRepository;
             _tokenService = tokenService;
             _emailService = emailService;
+            _signUpValidator = signUpValidator;
+            _resetPasswordValidator = resetPasswordValidator;
             _logger = logger;
         }
 
-        // Envía el email sin bloquear la respuesta HTTP. El envío por SMTP puede
-        // tardar varios segundos; con fire-and-forget respondemos al instante y
-        // el correo sale en segundo plano. EmailService solo depende de
-        // IConfiguration (singleton), así que es seguro usarlo fuera del scope
-        // de la request. Si falla, lo dejamos registrado en el log.
         private void SendEmailInBackground(string toEmail, string subject, string htmlBody)
         {
             _ = Task.Run(async () =>
@@ -72,9 +80,6 @@ namespace Jemar.Aplication.Services
             if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
                 throw new UnauthorizedException("Email o contraseña incorrectos.");
 
-            // El email tiene que estar verificado para poder iniciar sesión. Si no
-            // lo está (registro sin completar), reenviamos el código y le pedimos al
-            // frontend que muestre el paso de verificación.
             if (!user.IsEmailVerified)
             {
                 var verificationCode = GenerateNumericCode();
@@ -98,12 +103,13 @@ namespace Jemar.Aplication.Services
                 };
             }
 
-            // Si el navegador ya es de confianza (verificó 2FA hace menos de
-            // TrustedDeviceDays), nos salteamos el segundo factor.
             if (await IsDeviceTrustedAsync(user.Id, request.DeviceToken))
-                return BuildAuthResponse(user, _tokenService.GenerateToken(user));
+            {
+                var trustedDeviceResponse = BuildAuthResponse(user, _tokenService.GenerateToken(user));
+                trustedDeviceResponse.RefreshTokenPlaintext = await IssueRefreshTokenAsync(user.Id);
+                return trustedDeviceResponse;
+            }
 
-            // Segundo factor: generamos un código, lo guardamos hasheado y lo enviamos por email.
             var code = GenerateNumericCode();
             user.TwoFactorCode = BCrypt.Net.BCrypt.HashPassword(code);
             user.TwoFactorCodeExpiresAt = DateTime.UtcNow.AddMinutes(TwoFactorCodeMinutes);
@@ -142,18 +148,12 @@ namespace Jemar.Aplication.Services
             if (!BCrypt.Net.BCrypt.Verify(request.Code.Trim(), user.TwoFactorCode))
                 throw new UnauthorizedException("Código inválido o expirado.");
 
-            // Código consumido: lo limpiamos para que no se pueda reutilizar. Al
-            // verificar el código damos por confirmado el email (sirve tanto para
-            // la verificación de registro como para el 2FA opcional de login).
             user.TwoFactorCode = null;
             user.TwoFactorCodeExpiresAt = null;
             user.IsEmailVerified = true;
             user.UpdatedDateTime = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
 
-            // Este navegador acaba de probar que tiene acceso al email: lo
-            // marcamos de confianza para no volver a pedir el código en los
-            // próximos TrustedDeviceDays.
             var deviceToken = GenerateDeviceToken();
             await _trustedDeviceRepository.AddAsync(new TrustedDevice
             {
@@ -165,26 +165,78 @@ namespace Jemar.Aplication.Services
 
             var response = BuildAuthResponse(user, _tokenService.GenerateToken(user));
             response.DeviceToken = deviceToken;
+            response.RefreshTokenPlaintext = await IssueRefreshTokenAsync(user.Id);
             return response;
+        }
+
+        public async Task<AuthResponse> RefreshAsync(string refreshToken)
+        {
+            if (string.IsNullOrWhiteSpace(refreshToken))
+                throw new UnauthorizedException("Sesión inválida, iniciá sesión de nuevo.");
+
+            var hash = HashToken(refreshToken);
+            var stored = await _refreshTokenRepository.GetByTokenHashAsync(hash);
+
+            if (stored == null)
+                throw new UnauthorizedException("Sesión inválida, iniciá sesión de nuevo.");
+
+            if (stored.RevokedAt != null)
+            {
+                var activeTokens = await _refreshTokenRepository.GetActiveByUserIdAsync(stored.UserId);
+                foreach (var active in activeTokens)
+                {
+                    active.RevokedAt = DateTime.UtcNow;
+                    await _refreshTokenRepository.UpdateAsync(active);
+                }
+
+                throw new UnauthorizedException("Sesión inválida, iniciá sesión de nuevo.");
+            }
+
+            if (stored.ExpiresAt < DateTime.UtcNow)
+                throw new UnauthorizedException("Sesión inválida, iniciá sesión de nuevo.");
+
+            var user = await _userRepository.GetByIdAsync(stored.UserId);
+            if (user == null || !user.IsActive)
+                throw new UnauthorizedException("Sesión inválida, iniciá sesión de nuevo.");
+
+            var newRefreshToken = GenerateRefreshToken();
+            var newHash = HashToken(newRefreshToken);
+
+            stored.RevokedAt = DateTime.UtcNow;
+            stored.ReplacedByTokenHash = newHash;
+            await _refreshTokenRepository.UpdateAsync(stored);
+
+            await _refreshTokenRepository.AddAsync(new RefreshToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                TokenHash = newHash,
+                ExpiresAt = DateTime.UtcNow.AddDays(RefreshTokenDays)
+            });
+
+            var response = BuildAuthResponse(user, _tokenService.GenerateToken(user));
+            response.RefreshTokenPlaintext = newRefreshToken;
+            return response;
+        }
+
+        public async Task LogoutAsync(string? refreshToken)
+        {
+            if (string.IsNullOrWhiteSpace(refreshToken))
+                return;
+
+            var stored = await _refreshTokenRepository.GetByTokenHashAsync(HashToken(refreshToken));
+            if (stored == null || stored.RevokedAt != null)
+                return;
+
+            stored.RevokedAt = DateTime.UtcNow;
+            await _refreshTokenRepository.UpdateAsync(stored);
         }
 
         public async Task<AuthResponse> SignUpAsync(SignUpRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.FirstName) || request.FirstName.Trim().Length <= 3)
-                throw new ValidationException("El nombre debe tener más de 3 letras.");
-            if (!Regex.IsMatch(request.FirstName.Trim(), @"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"))
-                throw new ValidationException("El nombre solo puede contener letras.");
-
-            if (string.IsNullOrWhiteSpace(request.LastName) || request.LastName.Trim().Length <= 3)
-                throw new ValidationException("El apellido debe tener más de 3 letras.");
-            if (!Regex.IsMatch(request.LastName.Trim(), @"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"))
-                throw new ValidationException("El apellido solo puede contener letras.");
-
-            if (string.IsNullOrWhiteSpace(request.Email) ||
-                !Regex.IsMatch(request.Email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
-                throw new ValidationException("El email no tiene un formato válido.");
-
-            ValidatePasswordStrength(request.Password);
+            var validation = await _signUpValidator.ValidateAsync(request);
+            if (!validation.IsValid)
+                throw new ValidationException(validation.Errors.First().ErrorMessage);
 
             var existing = await _userRepository.GetByEmailAsync(request.Email.Trim());
             if (existing != null)
@@ -193,9 +245,6 @@ namespace Jemar.Aplication.Services
             var user = request.ToUser();
             user.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-            // El usuario queda registrado pero sin verificar. Generamos un código,
-            // lo guardamos hasheado y se lo enviamos por email. Recién cuando lo
-            // confirma (verify-2fa) puede iniciar sesión.
             var code = GenerateNumericCode();
             user.IsEmailVerified = false;
             user.TwoFactorCode = BCrypt.Net.BCrypt.HashPassword(code);
@@ -220,8 +269,6 @@ namespace Jemar.Aplication.Services
 
         public async Task<MessageResponse> ForgotPasswordAsync(ForgotPasswordRequest request)
         {
-            // Respuesta genérica siempre, exista o no el email, para no filtrar
-            // qué correos están registrados (enumeración de usuarios).
             var genericResponse = new MessageResponse
             {
                 Message = "Si el email está registrado, te enviamos un código para restablecer tu contraseña."
@@ -251,14 +298,9 @@ namespace Jemar.Aplication.Services
 
         public async Task<MessageResponse> ResetPasswordAsync(ResetPasswordRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Email) ||
-                !Regex.IsMatch(request.Email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
-                throw new ValidationException("El email no tiene un formato válido.");
-
-            if (string.IsNullOrWhiteSpace(request.Code))
-                throw new ValidationException("El código es requerido.");
-
-            ValidatePasswordStrength(request.NewPassword);
+            var validation = await _resetPasswordValidator.ValidateAsync(request);
+            if (!validation.IsValid)
+                throw new ValidationException(validation.Errors.First().ErrorMessage);
 
             var user = await _userRepository.GetByEmailAsync(request.Email.Trim());
             if (user == null || !user.IsActive)
@@ -293,29 +335,33 @@ namespace Jemar.Aplication.Services
             RequiresTwoFactor = false
         };
 
-        private static void ValidatePasswordStrength(string? password)
-        {
-            if (string.IsNullOrWhiteSpace(password))
-                throw new ValidationException("La contraseña es requerida.");
-
-            var letters = Regex.Matches(password, @"[a-zA-Z]").Count;
-            var digits = Regex.Matches(password, @"[0-9]").Count;
-            if (letters < 3 || digits < 1)
-                throw new ValidationException("La contraseña debe tener al menos 3 letras y 1 número.");
-        }
-
-        // Código numérico de 6 dígitos generado con un RNG criptográficamente seguro.
         private static string GenerateNumericCode()
         {
             var number = RandomNumberGenerator.GetInt32(0, 1_000_000);
             return number.ToString("D6");
         }
 
-        // Token de dispositivo: 32 bytes aleatorios en base64. Solo existe en
-        // texto plano en el momento de generarlo (se devuelve una vez al
-        // frontend); en la base queda guardado hasheado con bcrypt.
         private static string GenerateDeviceToken() =>
             Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+        private static string GenerateRefreshToken() =>
+            Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+        private static string HashToken(string token) =>
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+
+        private async Task<string> IssueRefreshTokenAsync(Guid userId)
+        {
+            var plaintext = GenerateRefreshToken();
+            await _refreshTokenRepository.AddAsync(new RefreshToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                TokenHash = HashToken(plaintext),
+                ExpiresAt = DateTime.UtcNow.AddDays(RefreshTokenDays)
+            });
+            return plaintext;
+        }
 
         private async Task<bool> IsDeviceTrustedAsync(Guid userId, string? deviceToken)
         {

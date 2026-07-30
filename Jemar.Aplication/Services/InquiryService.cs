@@ -59,8 +59,6 @@ namespace Jemar.Aplication.Services
                 string.IsNullOrWhiteSpace(request.Email))
                 throw new ValidationException("Nombre, apellido y email son requeridos.");
 
-            // La consulta puede ser anónima. Si viene un usuario logueado válido,
-            // dejamos el rastro de quién la hizo; el nombre/email siempre salen del formulario.
             Guid? createdByUserId = null;
             if (clientId.HasValue && clientId.Value != Guid.Empty)
             {
