@@ -6,10 +6,6 @@ namespace Jemar.Domain.Common
     {
         private const double EarthRadiusKm = 6371.0;
 
-        /// <summary>
-        /// Calcula la distancia en kilómetros entre dos coordenadas geográficas
-        /// usando la fórmula de Haversine.
-        /// </summary>
         public static double HaversineDistanceKm(double lat1, double lon1, double lat2, double lon2)
         {
             var dLat = ToRadians(lat2 - lat1);

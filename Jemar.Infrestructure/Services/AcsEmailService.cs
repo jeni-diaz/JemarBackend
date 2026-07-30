@@ -8,10 +8,6 @@ using System.Threading.Tasks;
 
 namespace Jemar.Infrastructure.Services
 {
-    // Envío de correo vía Azure Communication Services (API HTTP). Se usa en
-    // Azure porque el App Service en plan Free bloquea el SMTP saliente; la API
-    // HTTP de ACS no se ve afectada por ese bloqueo. En local se sigue usando
-    // EmailService (SMTP), según la config (ver Program.cs).
     public class AcsEmailService : IEmailService
     {
         private readonly IConfiguration _config;
@@ -34,8 +30,6 @@ namespace Jemar.Infrastructure.Services
 
             var client = new EmailClient(connectionString);
 
-            // Correos de notificación (no-reply): el remitente DoNotReply del
-            // dominio comunica que no se responden y así no se llena una casilla.
             var message = new EmailMessage(
                 senderAddress: senderAddress,
                 recipientAddress: toEmail,
@@ -45,8 +39,6 @@ namespace Jemar.Infrastructure.Services
             {
                 foreach (var image in inlineImages)
                 {
-                    // ContentId hace que el adjunto sea inline y referenciable
-                    // desde el HTML con <img src="cid:clave">.
                     var attachment = new EmailAttachment(
                         $"{image.Key}.png", "image/png", BinaryData.FromBytes(image.Value))
                     {

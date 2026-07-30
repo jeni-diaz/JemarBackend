@@ -10,17 +10,11 @@ namespace Jemar.Domain.Entities
         public UserRole Role { get; set; } = null!;
         public bool IsActive { get; set; }
 
-        // Recuperación de contraseña (código de un solo uso, guardado hasheado)
         public string? PasswordResetCode { get; set; }
         public DateTime? PasswordResetCodeExpiresAt { get; set; }
 
-        // Verificación de email: el usuario confirma el código que le enviamos
-        // al registrarse. Hasta que no lo haga, no puede iniciar sesión.
         public bool IsEmailVerified { get; set; }
 
-        // Doble factor por email (OTP guardado hasheado). Se usa tanto para
-        // verificar el email al registrarse como para el código de login
-        // cuando el navegador todavía no es de confianza (ver TrustedDevice).
         public string? TwoFactorCode { get; set; }
         public DateTime? TwoFactorCodeExpiresAt { get; set; }
 

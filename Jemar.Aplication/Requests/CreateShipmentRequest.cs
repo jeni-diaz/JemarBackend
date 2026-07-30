@@ -5,8 +5,6 @@ namespace Jemar.Aplication.Requests
 {
     public class CreateShipmentRequest
     {
-        // Opcional: id reservado en la cotización, para que el número mostrado al
-        // confirmar coincida con el que se guarda. Si no viene, se genera uno nuevo.
         public Guid? Id { get; set; }
 
         [Required(ErrorMessage = "Origin address is required.")]

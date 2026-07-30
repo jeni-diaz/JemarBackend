@@ -3,7 +3,10 @@ using Microsoft.Extensions.Http.Resilience;
 using Polly;
 using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Abstractions.Infrastructure;
+using Jemar.Aplication.Requests;
 using Jemar.Aplication.Services;
+using Jemar.Aplication.Validation;
+using FluentValidation;
 using Jemar.Infrastructure.Persistence;
 using Jemar.Infrastructure.Persistence.Repository;
 using Jemar.Infrastructure.Services;
@@ -28,10 +31,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCors, policy =>
         policy.WithOrigins(
-                  "http://localhost:5174", // Vite dev server
-                  "https://nice-mushroom-00666e20f.7.azurestaticapps.net") // Azure Static Web App (prod)
+                  "http://localhost:5174",
+                  "https://nice-mushroom-00666e20f.7.azurestaticapps.net")
               .AllowAnyHeader()
-              .AllowAnyMethod());
+              .AllowAnyMethod()
+              .AllowCredentials());
 });
 
 builder.Services.AddSwaggerGen(options =>
@@ -186,6 +190,7 @@ builder.Services.AddHttpClient<IOpenStreetMapService, OpenStreetMapService>(clie
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITrustedDeviceRepository, TrustedDeviceRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IInquiryRepository, InquiryRepository>();
@@ -195,17 +200,14 @@ builder.Services.AddScoped<IShipmentService, ShipmentService>();
 builder.Services.AddScoped<IInquiryService, InquiryService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-// En Azure (App Service Free) el SMTP saliente está bloqueado, así que si hay
-// configuración de Azure Communication Services se envía por su API HTTP; en
-// local, sin esa config, se usa SMTP.
+builder.Services.AddScoped<IValidator<SignUpRequest>, SignUpRequestValidator>();
+builder.Services.AddScoped<IValidator<CreateUserRequest>, CreateUserRequestValidator>();
+builder.Services.AddScoped<IValidator<ResetPasswordRequest>, ResetPasswordRequestValidator>();
 if (!string.IsNullOrWhiteSpace(builder.Configuration["Communication:ConnectionString"]))
     builder.Services.AddScoped<IEmailService, AcsEmailService>();
 else
     builder.Services.AddScoped<IEmailService, EmailService>();
 
-// Los endpoints de auth que aceptan credenciales o códigos (login, 2FA,
-// reset de contraseña) son el blanco típico de fuerza bruta. Limitamos por
-// IP + endpoint para que agotar el cupo de uno no bloquee a los demás.
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

@@ -17,6 +17,7 @@ namespace Jemar.Infrastructure.Persistence
         public DbSet<PackageSize> PackageSizes { get; set; }
         public DbSet<Inquiry> Inquiries { get; set; }
         public DbSet<TrustedDevice> TrustedDevices { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,6 +34,16 @@ namespace Jemar.Infrastructure.Persistence
                 .WithMany()
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasOne(t => t.User)
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasIndex(t => t.TokenHash)
+                .IsUnique();
 
             modelBuilder.Entity<Shipment>()
                 .HasOne(s => s.CreatedByUser)

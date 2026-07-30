@@ -44,9 +44,6 @@ namespace Jemar.Infrastructure.Services
 
             if (inlineImages != null && inlineImages.Count > 0)
             {
-                // Con imágenes incrustadas el cuerpo va como AlternateView HTML y
-                // cada imagen como LinkedResource, referenciada desde el HTML por
-                // su Content-ID (<img src="cid:clave">).
                 var htmlView = AlternateView.CreateAlternateViewFromString(
                     htmlBody, null, MediaTypeNames.Text.Html);
 
@@ -68,8 +65,6 @@ namespace Jemar.Infrastructure.Services
                 message.IsBodyHtml = true;
             }
 
-            // SmtpClient está marcado obsoleto pero sigue siendo funcional y
-            // suficiente para SMTP con STARTTLS (Gmail, Outlook, etc.).
 #pragma warning disable SYSLIB0014
             using var client = new SmtpClient(host, port)
             {

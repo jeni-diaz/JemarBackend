@@ -6,6 +6,7 @@ using Jemar.Domain.Entities;
 using Jemar.Domain.Enums;
 using Jemar.Aplication.Abstractions.Infrastructure;
 using Jemar.Aplication.Mapper;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Jemar.Aplication.Services
@@ -13,10 +14,17 @@ namespace Jemar.Aplication.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly FluentValidation.IValidator<CreateUserRequest> _createUserValidator;
+        private readonly FluentValidation.IValidator<SignUpRequest> _signUpValidator;
 
-        public UserService(IUserRepository userRepository)
+        public UserService(
+            IUserRepository userRepository,
+            FluentValidation.IValidator<CreateUserRequest> createUserValidator,
+            FluentValidation.IValidator<SignUpRequest> signUpValidator)
         {
             _userRepository = userRepository;
+            _createUserValidator = createUserValidator;
+            _signUpValidator = signUpValidator;
         }
 
         public async Task<List<UserResponse>> GetAllAsync()
@@ -43,10 +51,9 @@ namespace Jemar.Aplication.Services
 
         public async Task<UserResponse> CreateAsync(CreateUserRequest request)
         {
-            ValidatePersonalData(request.FirstName, request.LastName, request.Email, request.Password);
-
-            if (!Enum.IsDefined(typeof(UserRoleEnum), request.Role))
-                throw new ValidationException("El rol especificado no es válido.");
+            var validation = await _createUserValidator.ValidateAsync(request);
+            if (!validation.IsValid)
+                throw new ValidationException(validation.Errors.First().ErrorMessage);
 
             var existing = await _userRepository.GetByEmailAsync(request.Email.Trim());
             if (existing != null)
@@ -59,12 +66,11 @@ namespace Jemar.Aplication.Services
             return saved.ToUserResponse();
         }
 
-        // Registro de un cliente hecho por un empleado desde el alta de un envío.
-        // A diferencia del alta pública, no hay verificación por email: el empleado
-        // lo crea y queda activo y verificado para poder operar de inmediato.
         public async Task<UserResponse> CreateClientAsync(SignUpRequest request)
         {
-            ValidatePersonalData(request.FirstName, request.LastName, request.Email, request.Password);
+            var validation = await _signUpValidator.ValidateAsync(request);
+            if (!validation.IsValid)
+                throw new ValidationException(validation.Errors.First().ErrorMessage);
 
             var existing = await _userRepository.GetByEmailAsync(request.Email.Trim());
             if (existing != null)
@@ -86,34 +92,6 @@ namespace Jemar.Aplication.Services
 
             var saved = await _userRepository.AddAsync(user);
             return saved.ToUserResponse();
-        }
-
-        private static void ValidatePersonalData(string firstName, string lastName, string email, string password)
-        {
-            if (string.IsNullOrWhiteSpace(firstName) || firstName.Trim().Length <= 3)
-                throw new ValidationException("El nombre debe tener más de 3 letras.");
-
-            if (!Regex.IsMatch(firstName.Trim(), @"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"))
-                throw new ValidationException("El nombre solo puede contener letras.");
-
-            if (string.IsNullOrWhiteSpace(lastName) || lastName.Trim().Length <= 3)
-                throw new ValidationException("El apellido debe tener más de 3 letras.");
-
-            if (!Regex.IsMatch(lastName.Trim(), @"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"))
-                throw new ValidationException("El apellido solo puede contener letras.");
-
-            if (string.IsNullOrWhiteSpace(email) ||
-                !Regex.IsMatch(email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
-                throw new ValidationException("El email no tiene un formato válido.");
-
-            if (string.IsNullOrWhiteSpace(password))
-                throw new ValidationException("La contraseña es requerida.");
-
-            var letters = Regex.Matches(password, @"[a-zA-Z]").Count;
-            var digits = Regex.Matches(password, @"[0-9]").Count;
-
-            if (letters < 3 || digits < 1)
-                throw new ValidationException("La contraseña debe tener al menos 3 letras y 1 número.");
         }
 
         public async Task<bool> UpdateRoleAsync(UpdateUserRoleRequest request)
