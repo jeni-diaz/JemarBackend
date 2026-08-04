@@ -10,7 +10,6 @@ namespace Jemar.Presentation.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous]
     public class AuthController : ControllerBase
     {
         private const string RefreshTokenCookieName = "refreshToken";
@@ -25,6 +24,7 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
         [EnableRateLimiting("AuthSensitive")]
         public async Task<ActionResult<AuthResponse>> Login(SignInRequest request)
         {
@@ -39,6 +39,7 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost("verify-2fa")]
+        [AllowAnonymous]
         [EnableRateLimiting("AuthSensitive")]
         public async Task<ActionResult<AuthResponse>> VerifyTwoFactor(VerifyTwoFactorRequest request)
         {
@@ -48,6 +49,7 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost("refresh")]
+        [AllowAnonymous]
         [EnableRateLimiting("AuthSensitive")]
         public async Task<ActionResult<AuthResponse>> Refresh()
         {
@@ -61,6 +63,7 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost("logout")]
+        [AllowAnonymous]
         public async Task<ActionResult<MessageResponse>> Logout()
         {
             var refreshToken = Request.Cookies[RefreshTokenCookieName];
@@ -90,6 +93,7 @@ namespace Jemar.Presentation.Controllers
         };
 
         [HttpPost("register")]
+        [AllowAnonymous]
         public async Task<ActionResult<AuthResponse>> Register(SignUpRequest request)
         {
             var response = await _authService.SignUpAsync(request);
@@ -97,6 +101,7 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost("forgot-password")]
+        [AllowAnonymous]
         [EnableRateLimiting("AuthSensitive")]
         public async Task<ActionResult<MessageResponse>> ForgotPassword(ForgotPasswordRequest request)
         {
@@ -105,11 +110,40 @@ namespace Jemar.Presentation.Controllers
         }
 
         [HttpPost("reset-password")]
+        [AllowAnonymous]
         [EnableRateLimiting("AuthSensitive")]
         public async Task<ActionResult<MessageResponse>> ResetPassword(ResetPasswordRequest request)
         {
             var response = await _authService.ResetPasswordAsync(request);
             return Ok(response);
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<ActionResult<UserProfileResponse>> Me()
+        {
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var profile = await _authService.GetProfileAsync(userId);
+            return Ok(profile);
+        }
+
+        [HttpPut("me")]
+        [Authorize]
+        public async Task<ActionResult<UserProfileResponse>> UpdateMe(UpdateProfileRequest request)
+        {
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var profile = await _authService.UpdateProfileAsync(userId, request);
+            return Ok(profile);
+        }
+
+        [HttpPut("me/password")]
+        [Authorize]
+        [EnableRateLimiting("AuthSensitive")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+        {
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            await _authService.ChangePasswordAsync(userId, request);
+            return NoContent();
         }
     }
 }

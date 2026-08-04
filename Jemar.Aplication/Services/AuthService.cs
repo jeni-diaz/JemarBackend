@@ -31,6 +31,8 @@ namespace Jemar.Aplication.Services
         private readonly IEmailService _emailService;
         private readonly FluentValidation.IValidator<SignUpRequest> _signUpValidator;
         private readonly FluentValidation.IValidator<ResetPasswordRequest> _resetPasswordValidator;
+        private readonly FluentValidation.IValidator<UpdateProfileRequest> _updateProfileValidator;
+        private readonly FluentValidation.IValidator<ChangePasswordRequest> _changePasswordValidator;
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
@@ -41,6 +43,8 @@ namespace Jemar.Aplication.Services
             IEmailService emailService,
             FluentValidation.IValidator<SignUpRequest> signUpValidator,
             FluentValidation.IValidator<ResetPasswordRequest> resetPasswordValidator,
+            FluentValidation.IValidator<UpdateProfileRequest> updateProfileValidator,
+            FluentValidation.IValidator<ChangePasswordRequest> changePasswordValidator,
             ILogger<AuthService> logger)
         {
             _userRepository = userRepository;
@@ -50,6 +54,8 @@ namespace Jemar.Aplication.Services
             _emailService = emailService;
             _signUpValidator = signUpValidator;
             _resetPasswordValidator = resetPasswordValidator;
+            _updateProfileValidator = updateProfileValidator;
+            _changePasswordValidator = changePasswordValidator;
             _logger = logger;
         }
 
@@ -325,6 +331,71 @@ namespace Jemar.Aplication.Services
                 Message = "Tu contraseña fue actualizada correctamente."
             };
         }
+
+        public async Task<UserProfileResponse> GetProfileAsync(Guid userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                throw new NotFoundException("Usuario no encontrado.");
+
+            return BuildProfileResponse(user);
+        }
+
+        public async Task<UserProfileResponse> UpdateProfileAsync(Guid userId, UpdateProfileRequest request)
+        {
+            var validation = await _updateProfileValidator.ValidateAsync(request);
+            if (!validation.IsValid)
+                throw new ValidationException(validation.Errors.First().ErrorMessage);
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                throw new NotFoundException("Usuario no encontrado.");
+
+            var normalizedEmail = request.Email.Trim();
+            if (!string.Equals(normalizedEmail, user.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                var existing = await _userRepository.GetByEmailAsync(normalizedEmail);
+                if (existing != null && existing.Id != user.Id)
+                    throw new ConflictException("Ya existe un usuario registrado con ese email.");
+
+                user.Email = normalizedEmail;
+            }
+
+            user.FirstName = request.FirstName.Trim();
+            user.LastName = request.LastName.Trim();
+            user.UpdatedDateTime = DateTime.UtcNow;
+
+            await _userRepository.UpdateAsync(user);
+
+            return BuildProfileResponse(user);
+        }
+
+        public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
+        {
+            var validation = await _changePasswordValidator.ValidateAsync(request);
+            if (!validation.IsValid)
+                throw new ValidationException(validation.Errors.First().ErrorMessage);
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                throw new NotFoundException("Usuario no encontrado.");
+
+            if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.Password))
+                throw new UnauthorizedException("La contraseña actual es incorrecta.");
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            user.UpdatedDateTime = DateTime.UtcNow;
+            await _userRepository.UpdateAsync(user);
+        }
+
+        private static UserProfileResponse BuildProfileResponse(User user) => new UserProfileResponse
+        {
+            Id = user.Id,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            Role = user.Role?.Name.ToString() ?? ((UserRoleEnum)user.RoleId).ToString()
+        };
 
         private AuthResponse BuildAuthResponse(User user, string token) => new AuthResponse
         {
