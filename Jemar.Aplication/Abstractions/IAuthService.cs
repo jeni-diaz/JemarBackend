@@ -13,5 +13,8 @@ namespace Jemar.Aplication.Abstractions
         Task<MessageResponse> ResetPasswordAsync(ResetPasswordRequest request);
         Task<AuthResponse> RefreshAsync(string refreshToken);
         Task LogoutAsync(string? refreshToken);
+        Task<UserProfileResponse> GetProfileAsync(Guid userId);
+        Task<UserProfileResponse> UpdateProfileAsync(Guid userId, UpdateProfileRequest request);
+        Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request);
     }
 }
