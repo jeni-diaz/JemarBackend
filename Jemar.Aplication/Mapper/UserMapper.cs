@@ -21,6 +21,7 @@ namespace Jemar.Aplication.Mapper
                 Password = request.Password,
                 RoleId = request.Role,
                 IsActive = true,
+                IsEmailVerified = true,
                 CreatedDateTime = DateTime.UtcNow,
                 UpdatedDateTime = DateTime.UtcNow
             };
