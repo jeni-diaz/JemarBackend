@@ -39,6 +39,16 @@ namespace Jemar.Presentation.Controllers
             return Ok(shipment);
         }
 
+        [HttpGet("{id}/history")]
+        public async Task<ActionResult<List<ShipmentStatusHistoryResponse>>> GetStatusHistory(Guid id)
+        {
+            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
+            var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
+
+            var history = await _shipmentService.GetStatusHistoryAsync(id, userId, role);
+            return Ok(history);
+        }
+
         [HttpGet("types")]
         public async Task<ActionResult<List<ShipmentTypeResponse>>> GetShipmentTypes()
         {

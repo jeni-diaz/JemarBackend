@@ -70,5 +70,21 @@ namespace Jemar.Infrastructure.Persistence.Repository
             return await _context.Shipments
                 .CountAsync(s => s.CreatedByUserId == userId && !s.IsDeleted);
         }
+
+        public async Task AddStatusHistoryAsync(ShipmentStatusHistory history)
+        {
+            await _context.ShipmentStatusHistories.AddAsync(history);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<ShipmentStatusHistory>> GetStatusHistoryAsync(Guid shipmentId)
+        {
+            return await _context.ShipmentStatusHistories
+                .Include(h => h.ShipmentStatus)
+                .Include(h => h.ChangedByUser)
+                .Where(h => h.ShipmentId == shipmentId && !h.IsDeleted)
+                .OrderBy(h => h.CreatedDateTime)
+                .ToListAsync();
+        }
     }
 }

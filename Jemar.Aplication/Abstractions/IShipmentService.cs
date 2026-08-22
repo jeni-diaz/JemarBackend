@@ -10,6 +10,7 @@ namespace Jemar.Aplication.Abstractions
     {
         Task<List<ShipmentResponse>> GetAllAsync(Guid currentUserId, string currentUserRole);
         Task<ShipmentResponse?> GetByIdAsync(Guid id, Guid currentUserId, string currentUserRole);
+        Task<List<ShipmentStatusHistoryResponse>> GetStatusHistoryAsync(Guid id, Guid currentUserId, string currentUserRole);
         Task<ShipmentQuoteResponse> QuoteAsync(CreateShipmentRequest request, Guid currentUserId, string currentUserRole);
         Task<ShipmentResponse> CreateAsync(CreateShipmentRequest request, Guid currentUserId, string currentUserRole);
         Task<bool> UpdateStatusAsync(Guid id, UpdateShipmentRequest request, Guid currentUserId, string currentUserRole);

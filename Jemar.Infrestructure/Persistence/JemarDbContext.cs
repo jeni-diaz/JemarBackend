@@ -12,6 +12,7 @@ namespace Jemar.Infrastructure.Persistence
         public DbSet<User> Users { get; set; }
         public DbSet<Domain.Entities.UserRole> Roles { get; set; }
         public DbSet<Shipment> Shipments { get; set; }
+        public DbSet<ShipmentStatusHistory> ShipmentStatusHistories { get; set; }
         public DbSet<ShipmentType> ShipmentTypes { get; set; }
         public DbSet<ShipmentStatus> ShipmentStatuses { get; set; }
         public DbSet<PackageSize> PackageSizes { get; set; }
@@ -67,6 +68,24 @@ namespace Jemar.Infrastructure.Persistence
                 .HasOne(s => s.PackageSize)
                 .WithMany()
                 .HasForeignKey(s => s.PackageSizeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ShipmentStatusHistory>()
+                .HasOne(h => h.Shipment)
+                .WithMany()
+                .HasForeignKey(h => h.ShipmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ShipmentStatusHistory>()
+                .HasOne(h => h.ShipmentStatus)
+                .WithMany()
+                .HasForeignKey(h => h.ShipmentStatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ShipmentStatusHistory>()
+                .HasOne(h => h.ChangedByUser)
+                .WithMany()
+                .HasForeignKey(h => h.ChangedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Shipment>()

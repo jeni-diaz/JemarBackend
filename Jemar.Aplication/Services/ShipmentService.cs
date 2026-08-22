@@ -58,6 +58,23 @@ namespace Jemar.Aplication.Services
             return shipment.ToShipmentResponse();
         }
 
+        public async Task<List<ShipmentStatusHistoryResponse>> GetStatusHistoryAsync(Guid id, Guid currentUserId, string currentUserRole)
+        {
+            var shipment = await _shipmentRepository.GetByIdAsync(id);
+            if (shipment == null)
+                throw new NotFoundException("Envío no encontrado.");
+
+            if (currentUserRole == UserRoleEnum.Client.ToString() &&
+                shipment.CreatedByUserId != currentUserId &&
+                shipment.OnBehalfOfClientId != currentUserId)
+            {
+                throw new UnauthorizedAccessException("No tiene autorización para ver este envío.");
+            }
+
+            var history = await _shipmentRepository.GetStatusHistoryAsync(id);
+            return history.ToShipmentStatusHistoryResponseList();
+        }
+
         private async Task<Shipment> BuildShipmentAsync(CreateShipmentRequest request, Guid currentUserId, string currentUserRole)
         {
             var origin = await _openStreetMapService.GeocodeAddressAsync(request.Origin);
@@ -138,6 +155,17 @@ namespace Jemar.Aplication.Services
             var shipment = await BuildShipmentAsync(request, currentUserId, currentUserRole);
 
             var saved = await _shipmentRepository.AddAsync(shipment);
+
+            await _shipmentRepository.AddStatusHistoryAsync(new ShipmentStatusHistory
+            {
+                Id = Guid.NewGuid(),
+                ShipmentId = saved.Id,
+                ShipmentStatusId = saved.ShipmentStatusId,
+                ChangedByUserId = currentUserId,
+                CreatedDateTime = DateTime.UtcNow,
+                UpdatedDateTime = DateTime.UtcNow
+            });
+
             var fullyLoadedShipment = await _shipmentRepository.GetByIdAsync(saved.Id);
 
             await SendShipmentEmailSafeAsync(fullyLoadedShipment!, currentUserId);
@@ -303,6 +331,17 @@ namespace Jemar.Aplication.Services
             shipment.UpdatedDateTime = DateTime.UtcNow;
 
             await _shipmentRepository.UpdateAsync(shipment);
+
+            await _shipmentRepository.AddStatusHistoryAsync(new ShipmentStatusHistory
+            {
+                Id = Guid.NewGuid(),
+                ShipmentId = shipment.Id,
+                ShipmentStatusId = nextStatus,
+                ChangedByUserId = currentUserId,
+                CreatedDateTime = DateTime.UtcNow,
+                UpdatedDateTime = DateTime.UtcNow
+            });
+
             return true;
         }
 
