@@ -10,6 +10,8 @@ namespace Jemar.Aplication.Abstractions.Infrastructure
         Task<List<ShipmentType>> GetShipmentTypesAsync();
         Task<List<PackageSize>> GetPackageSizesAsync();
         Task<int> CountByCreatedByUserIdAsync(Guid userId);
+        Task AddStatusHistoryAsync(ShipmentStatusHistory history);
+        Task<List<ShipmentStatusHistory>> GetStatusHistoryAsync(Guid shipmentId);
 
     }
 }

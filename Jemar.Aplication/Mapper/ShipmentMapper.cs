@@ -54,6 +54,21 @@ namespace Jemar.Aplication.Mapper
             return shipments.Select(s => s.ToShipmentResponse()).ToList();
         }
 
+        public static ShipmentStatusHistoryResponse ToShipmentStatusHistoryResponse(this ShipmentStatusHistory history)
+        {
+            return new ShipmentStatusHistoryResponse
+            {
+                Status = history.ShipmentStatus.Name.ToString(),
+                ChangedByName = $"{history.ChangedByUser.FirstName} {history.ChangedByUser.LastName}".Trim(),
+                ChangedAt = history.CreatedDateTime
+            };
+        }
+
+        public static List<ShipmentStatusHistoryResponse> ToShipmentStatusHistoryResponseList(this List<ShipmentStatusHistory> history)
+        {
+            return history.Select(h => h.ToShipmentStatusHistoryResponse()).ToList();
+        }
+
         public static ShipmentTypeResponse ToShipmentTypeResponse(this ShipmentType shipmentType)
         {
             return new ShipmentTypeResponse
