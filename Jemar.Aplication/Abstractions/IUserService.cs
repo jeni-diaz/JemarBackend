@@ -13,6 +13,6 @@ namespace Jemar.Aplication.Abstractions
         Task<UserResponse> CreateAsync(CreateUserRequest request);
         Task<UserResponse> CreateClientAsync(SignUpRequest request);
         Task<bool> UpdateRoleAsync(UpdateUserRoleRequest request);
-        Task<bool> DeleteAsync(string email);
+        Task<bool> UpdateStatusAsync(UpdateUserStatusRequest request);
     }
 }

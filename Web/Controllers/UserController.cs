@@ -52,10 +52,10 @@ namespace Jemar.Presentation.Controllers
             return NoContent();
         }
 
-        [HttpDelete("{email}")]
-        public async Task<IActionResult> Delete(string email)
+        [HttpPut("status")]
+        public async Task<IActionResult> UpdateStatus(UpdateUserStatusRequest request)
         {
-            await _userService.DeleteAsync(email);
+            await _userService.UpdateStatusAsync(request);
             return NoContent();
         }
 
