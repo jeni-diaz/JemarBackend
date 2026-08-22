@@ -36,7 +36,8 @@ namespace Jemar.Aplication.Mapper
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Email = user.Email,
-                Role = user.Role?.Name.ToString() ?? ((UserRoleEnum)user.RoleId).ToString()
+                Role = user.Role?.Name.ToString() ?? ((UserRoleEnum)user.RoleId).ToString(),
+                IsActive = user.IsActive
             };
         }
 
