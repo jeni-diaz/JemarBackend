@@ -1,5 +1,6 @@
 ﻿
 using System.Globalization;
+using System.Linq;
 using System.Net.Http.Json;
 using System.Web;
 using Jemar.Aplication.Abstractions;
@@ -28,7 +29,7 @@ namespace Jemar.Aplication.Services
 
             var encodedQuery = HttpUtility.UrlEncode(query);
 
-            var url = $"/search?format=json&limit={limit}&countrycodes=ar&q={encodedQuery}";
+            var url = $"/search?format=json&limit={limit}&countrycodes=ar&addressdetails=1&q={encodedQuery}";
 
             var response = await _httpClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
@@ -46,13 +47,28 @@ namespace Jemar.Aplication.Services
 
                 results.Add(new GeocodeResult
                 {
-                    DisplayName = match.DisplayName,
+                    DisplayName = FormatAddress(match),
                     Latitude = latitude,
                     Longitude = longitude
                 });
             }
 
             return results;
+        }
+
+        private static string FormatAddress(OpenStreetMapResponse match)
+        {
+            var address = match.Address;
+            if (address == null)
+                return match.DisplayName;
+
+            var city = address.City ?? address.Town ?? address.Village ?? address.Suburb;
+
+            var parts = new[] { address.Road, address.HouseNumber, city, address.State }
+                .Where(part => !string.IsNullOrWhiteSpace(part));
+
+            var formatted = string.Join(", ", parts);
+            return string.IsNullOrWhiteSpace(formatted) ? match.DisplayName : formatted;
         }
     }
 }

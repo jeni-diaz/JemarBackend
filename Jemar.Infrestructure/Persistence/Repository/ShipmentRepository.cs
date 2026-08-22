@@ -64,5 +64,11 @@ namespace Jemar.Infrastructure.Persistence.Repository
         {
             return await _context.PackageSizes.ToListAsync();
         }
+
+        public async Task<int> CountByCreatedByUserIdAsync(Guid userId)
+        {
+            return await _context.Shipments
+                .CountAsync(s => s.CreatedByUserId == userId && !s.IsDeleted);
+        }
     }
 }

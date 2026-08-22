@@ -11,5 +11,7 @@ namespace Jemar.Aplication.Responses
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+        public int ShipmentCount { get; set; }
     }
 }

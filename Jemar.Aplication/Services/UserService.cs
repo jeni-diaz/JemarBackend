@@ -14,15 +14,18 @@ namespace Jemar.Aplication.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IShipmentRepository _shipmentRepository;
         private readonly FluentValidation.IValidator<CreateUserRequest> _createUserValidator;
         private readonly FluentValidation.IValidator<SignUpRequest> _signUpValidator;
 
         public UserService(
             IUserRepository userRepository,
+            IShipmentRepository shipmentRepository,
             FluentValidation.IValidator<CreateUserRequest> createUserValidator,
             FluentValidation.IValidator<SignUpRequest> signUpValidator)
         {
             _userRepository = userRepository;
+            _shipmentRepository = shipmentRepository;
             _createUserValidator = createUserValidator;
             _signUpValidator = signUpValidator;
         }
@@ -46,7 +49,10 @@ namespace Jemar.Aplication.Services
             if (user == null)
                 throw new NotFoundException("No existe un usuario con ese email.");
 
-            return user.ToUserResponse();
+            var response = user.ToUserResponse();
+            response.ShipmentCount = await _shipmentRepository.CountByCreatedByUserIdAsync(user.Id);
+
+            return response;
         }
 
         public async Task<UserResponse> CreateAsync(CreateUserRequest request)
@@ -118,28 +124,23 @@ namespace Jemar.Aplication.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string email)
+        public async Task<bool> UpdateStatusAsync(UpdateUserStatusRequest request)
         {
-            if (string.IsNullOrWhiteSpace(email))
+            if (string.IsNullOrWhiteSpace(request.Email))
                 throw new ValidationException("El email es requerido.");
 
-            if (!Regex.IsMatch(email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            if (!Regex.IsMatch(request.Email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
                 throw new ValidationException("El email no tiene un formato válido.");
 
-            var user = await _userRepository.GetByEmailAsync(email.Trim());
+            var user = await _userRepository.GetByEmailAsync(request.Email.Trim());
 
             if (user == null)
                 throw new NotFoundException("No existe un usuario con ese email.");
 
-            if (user.IsDeleted)
-                throw new ConflictException("El usuario ya fue eliminado.");
+            if (user.RoleId == (int)UserRoleEnum.SuperAdmin && !request.IsActive)
+                throw new ValidationException("No se puede deshabilitar el Super Admin del sistema.");
 
-            if (user.RoleId == (int)UserRoleEnum.SuperAdmin)
-                throw new ValidationException("No se puede eliminar el Super Admin del sistema.");
-
-            user.IsDeleted = true;
-            user.IsActive = false;
-            user.DeletedDateTime = DateTime.UtcNow;
+            user.IsActive = request.IsActive;
             user.UpdatedDateTime = DateTime.UtcNow;
 
             await _userRepository.UpdateAsync(user);
