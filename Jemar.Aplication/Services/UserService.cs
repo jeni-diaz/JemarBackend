@@ -14,15 +14,18 @@ namespace Jemar.Aplication.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IShipmentRepository _shipmentRepository;
         private readonly FluentValidation.IValidator<CreateUserRequest> _createUserValidator;
         private readonly FluentValidation.IValidator<SignUpRequest> _signUpValidator;
 
         public UserService(
             IUserRepository userRepository,
+            IShipmentRepository shipmentRepository,
             FluentValidation.IValidator<CreateUserRequest> createUserValidator,
             FluentValidation.IValidator<SignUpRequest> signUpValidator)
         {
             _userRepository = userRepository;
+            _shipmentRepository = shipmentRepository;
             _createUserValidator = createUserValidator;
             _signUpValidator = signUpValidator;
         }
@@ -46,7 +49,10 @@ namespace Jemar.Aplication.Services
             if (user == null)
                 throw new NotFoundException("No existe un usuario con ese email.");
 
-            return user.ToUserResponse();
+            var response = user.ToUserResponse();
+            response.ShipmentCount = await _shipmentRepository.CountByCreatedByUserIdAsync(user.Id);
+
+            return response;
         }
 
         public async Task<UserResponse> CreateAsync(CreateUserRequest request)
