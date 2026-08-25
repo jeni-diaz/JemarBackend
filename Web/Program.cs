@@ -73,6 +73,9 @@ var issuer = builder.Configuration["Jwt:Issuer"]
 var audience = builder.Configuration["Jwt:Audience"]
     ?? throw new InvalidOperationException("La configuraci�n 'Jwt:Audience' no existe.");
 
+_ = builder.Configuration["MercadoPago:AccessToken"]
+    ?? throw new InvalidOperationException("La configuraci�n 'MercadoPago:AccessToken' no existe.");
+
 if (secret.Length < 32)
 {
     secret = secret.PadRight(32, '!');
@@ -194,10 +197,13 @@ builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IInquiryRepository, InquiryRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IShipmentService, ShipmentService>();
 builder.Services.AddScoped<IInquiryService, InquiryService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IMercadoPagoService, MercadoPagoService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IValidator<SignUpRequest>, SignUpRequestValidator>();

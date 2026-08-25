@@ -17,6 +17,8 @@ namespace Jemar.Infrastructure.Persistence
         public DbSet<ShipmentStatus> ShipmentStatuses { get; set; }
         public DbSet<PackageSize> PackageSizes { get; set; }
         public DbSet<Inquiry> Inquiries { get; set; }
+        public DbSet<Payment> Payments { get; set; }
+        public DbSet<PaymentStatus> PaymentStatuses { get; set; }
         public DbSet<TrustedDevice> TrustedDevices { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
@@ -108,6 +110,22 @@ namespace Jemar.Infrastructure.Persistence
                 .HasForeignKey(i => i.RespondedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Payment>()
+                .HasOne(p => p.Shipment)
+                .WithMany()
+                .HasForeignKey(p => p.ShipmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Payment>()
+                .HasOne(p => p.PaymentStatus)
+                .WithMany()
+                .HasForeignKey(p => p.PaymentStatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Payment>()
+                .Property(p => p.Amount)
+                .HasPrecision(18, 2);
+
             modelBuilder.Entity<UserRole>().HasData(
                 new UserRole { Id = 1, Name = UserRoleEnum.Client, Description = "Client Role" },
                 new UserRole { Id = 2, Name = UserRoleEnum.Employee, Description = "Employee Role" },
@@ -140,6 +158,13 @@ namespace Jemar.Infrastructure.Persistence
                 new PackageSize { Id = 1, Name = PackageSizeEnum.Small, MaxLengthCm = 30.00m, MaxWidthCm = 30.00m, MaxHeightCm = 30.00m, BasePrice = 1500.00m, RatePerKm = 20.00m, Surcharge = 0.00m },
                 new PackageSize { Id = 2, Name = PackageSizeEnum.Medium, MaxLengthCm = 60.00m, MaxWidthCm = 60.00m, MaxHeightCm = 60.00m, BasePrice = 2500.00m, RatePerKm = 35.00m, Surcharge = 1000.00m },
                 new PackageSize { Id = 3, Name = PackageSizeEnum.Large, MaxLengthCm = 120.00m, MaxWidthCm = 120.00m, MaxHeightCm = 120.00m, BasePrice = 4000.00m, RatePerKm = 50.00m, Surcharge = 2500.00m }
+            );
+
+            modelBuilder.Entity<PaymentStatus>().HasData(
+                new PaymentStatus { Id = 1, Name = PaymentStatusEnum.Pending, Description = "Payment is pending" },
+                new PaymentStatus { Id = 2, Name = PaymentStatusEnum.Approved, Description = "Payment was approved" },
+                new PaymentStatus { Id = 3, Name = PaymentStatusEnum.Rejected, Description = "Payment was rejected" },
+                new PaymentStatus { Id = 4, Name = PaymentStatusEnum.Cancelled, Description = "Payment was cancelled" }
             );
         }
     }
