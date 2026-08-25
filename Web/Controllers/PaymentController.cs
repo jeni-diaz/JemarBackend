@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Jemar.Aplication.Abstractions;
+using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
 
 namespace Jemar.Presentation.Controllers
@@ -19,8 +20,8 @@ namespace Jemar.Presentation.Controllers
             _logger = logger;
         }
 
-        [HttpPost("shipment/{shipmentId}/preference")]
-        public async Task<ActionResult<CreatePaymentPreferenceResponse>> CreatePreference(Guid shipmentId)
+        [HttpPost("checkout")]
+        public async Task<ActionResult<CreatePaymentPreferenceResponse>> CreateCheckout(CreateShipmentRequest request)
         {
             var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
             var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
@@ -28,17 +29,7 @@ namespace Jemar.Presentation.Controllers
             var frontendBaseUrl = HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Frontend:BaseUrl"] ?? string.Empty;
             var backendBaseUrl = $"{Request.Scheme}://{Request.Host}";
 
-            var result = await _paymentService.CreatePreferenceAsync(shipmentId, userId, role, frontendBaseUrl, backendBaseUrl);
-            return Ok(result);
-        }
-
-        [HttpGet("shipment/{shipmentId}/status")]
-        public async Task<ActionResult<PaymentStatusResponse>> GetStatus(Guid shipmentId)
-        {
-            var userId = HttpContext.Items["UserId"] as Guid? ?? Guid.Empty;
-            var role = HttpContext.Items["UserRole"] as string ?? string.Empty;
-
-            var result = await _paymentService.GetStatusAsync(shipmentId, userId, role);
+            var result = await _paymentService.CreateCheckoutAsync(request, userId, role, frontendBaseUrl, backendBaseUrl);
             return Ok(result);
         }
 

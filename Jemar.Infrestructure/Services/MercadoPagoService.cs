@@ -1,6 +1,5 @@
 using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Responses;
-using Jemar.Domain.Entities;
 using Microsoft.Extensions.Configuration;
 using MercadoPago.Client.Preference;
 using MercadoPago.Client.Payment;
@@ -28,7 +27,7 @@ namespace Jemar.Infrastructure.Services
             MercadoPago.Config.MercadoPagoConfig.AccessToken = accessToken;
         }
 
-        public async Task<(string PreferenceId, string InitPoint)> CreatePreferenceAsync(Shipment shipment, string frontendBaseUrl, string backendBaseUrl)
+        public async Task<(string PreferenceId, string InitPoint)> CreatePreferenceAsync(Guid referenceId, decimal amount, string title, string frontendBaseUrl, string backendBaseUrl)
         {
             EnsureAccessToken();
 
@@ -38,13 +37,13 @@ namespace Jemar.Infrastructure.Services
                 {
                     new PreferenceItemRequest
                     {
-                        Title = $"Envío Jemar #{shipment.Id}",
+                        Title = title,
                         Quantity = 1,
                         CurrencyId = "ARS",
-                        UnitPrice = shipment.Price
+                        UnitPrice = amount
                     }
                 },
-                ExternalReference = shipment.Id.ToString(),
+                ExternalReference = referenceId.ToString(),
                 BackUrls = new PreferenceBackUrlsRequest
                 {
                     Success = $"{frontendBaseUrl}/payment/success",

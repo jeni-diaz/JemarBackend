@@ -114,7 +114,7 @@ namespace Jemar.Infrastructure.Persistence
                 .HasOne(p => p.Shipment)
                 .WithMany()
                 .HasForeignKey(p => p.ShipmentId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Payment>()
                 .HasOne(p => p.PaymentStatus)

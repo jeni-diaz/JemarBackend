@@ -1,7 +1,7 @@
 using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Abstractions.Infrastructure;
-using Jemar.Aplication.Exceptions;
 using Jemar.Aplication.Mapper;
+using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
 using Jemar.Domain.Entities;
 using Jemar.Domain.Enums;
@@ -11,81 +11,50 @@ namespace Jemar.Aplication.Services
     public class PaymentService : IPaymentService
     {
         private readonly IPaymentRepository _paymentRepository;
-        private readonly IShipmentRepository _shipmentRepository;
+        private readonly IShipmentService _shipmentService;
         private readonly IMercadoPagoService _mercadoPagoService;
 
-        public PaymentService(IPaymentRepository paymentRepository, IShipmentRepository shipmentRepository, IMercadoPagoService mercadoPagoService)
+        public PaymentService(IPaymentRepository paymentRepository, IShipmentService shipmentService, IMercadoPagoService mercadoPagoService)
         {
             _paymentRepository = paymentRepository;
-            _shipmentRepository = shipmentRepository;
+            _shipmentService = shipmentService;
             _mercadoPagoService = mercadoPagoService;
         }
 
-        private static void EnsureOwnership(Shipment shipment, Guid currentUserId, string currentUserRole)
+        public async Task<CreatePaymentPreferenceResponse> CreateCheckoutAsync(CreateShipmentRequest request, Guid currentUserId, string currentUserRole, string frontendBaseUrl, string backendBaseUrl)
         {
-            if (currentUserRole == UserRoleEnum.Client.ToString() &&
-                shipment.CreatedByUserId != currentUserId &&
-                shipment.OnBehalfOfClientId != currentUserId)
-            {
-                throw new UnauthorizedAccessException("No tiene autorización para pagar este envío.");
-            }
-        }
+            // Recomputes the price server-side (never trust a client-supplied amount) and
+            // validates the request the same way a normal shipment creation would.
+            var quote = await _shipmentService.QuoteAsync(request, currentUserId, currentUserRole);
 
-        public async Task<CreatePaymentPreferenceResponse> CreatePreferenceAsync(Guid shipmentId, Guid currentUserId, string currentUserRole, string frontendBaseUrl, string backendBaseUrl)
-        {
-            var shipment = await _shipmentRepository.GetByIdAsync(shipmentId);
-            if (shipment == null)
-                throw new NotFoundException("Envío no encontrado.");
-
-            EnsureOwnership(shipment, currentUserId, currentUserRole);
-
-            if (shipment.Price <= 0)
-                throw new ArgumentException("El envío no tiene un precio válido para pagar.");
-
-            var existingPayments = await _paymentRepository.GetByShipmentIdAsync(shipmentId);
-            if (existingPayments.Any(p => p.PaymentStatusId == (int)PaymentStatusEnum.Approved))
-                throw new ConflictException("Este envío ya fue pagado.");
-
-            var (preferenceId, initPoint) = await _mercadoPagoService.CreatePreferenceAsync(shipment, frontendBaseUrl, backendBaseUrl);
-
-            await _paymentRepository.AddAsync(new Payment
+            var payment = new Payment
             {
                 Id = Guid.NewGuid(),
-                ShipmentId = shipment.Id,
-                Amount = shipment.Price,
+                Amount = quote.Price,
                 PaymentStatusId = (int)PaymentStatusEnum.Pending,
-                PreferenceId = preferenceId,
+                CreatedByUserId = currentUserId,
+                CreatedByRole = currentUserRole,
+                PendingShipmentId = request.Id ?? Guid.NewGuid(),
+                PendingOrigin = request.Origin,
+                PendingDestination = request.Destination,
+                PendingShipmentTypeId = request.ShipmentTypeId,
+                PendingPackageSizeId = request.PackageSizeId,
+                PendingOnBehalfOfClientId = request.OnBehalfOfClientId,
                 CreatedDateTime = DateTime.UtcNow,
                 UpdatedDateTime = DateTime.UtcNow
-            });
+            };
+
+            var (preferenceId, initPoint) = await _mercadoPagoService.CreatePreferenceAsync(
+                payment.Id, quote.Price, $"Envío Jemar #{payment.PendingShipmentId}", frontendBaseUrl, backendBaseUrl);
+
+            payment.PreferenceId = preferenceId;
+            await _paymentRepository.AddAsync(payment);
 
             return new CreatePaymentPreferenceResponse
             {
                 PreferenceId = preferenceId,
                 InitPoint = initPoint
             };
-        }
-
-        public async Task<PaymentStatusResponse> GetStatusAsync(Guid shipmentId, Guid currentUserId, string currentUserRole)
-        {
-            var shipment = await _shipmentRepository.GetByIdAsync(shipmentId);
-            if (shipment == null)
-                throw new NotFoundException("Envío no encontrado.");
-
-            EnsureOwnership(shipment, currentUserId, currentUserRole);
-
-            var payment = await _paymentRepository.GetLatestByShipmentIdAsync(shipmentId);
-            if (payment == null)
-            {
-                return new PaymentStatusResponse
-                {
-                    ShipmentId = shipmentId,
-                    Status = "None",
-                    Amount = shipment.Price
-                };
-            }
-
-            return payment.ToPaymentStatusResponse();
         }
 
         private static int MapMercadoPagoStatus(string mercadoPagoStatus)
@@ -107,42 +76,40 @@ namespace Jemar.Aplication.Services
             if (info == null)
                 return null;
 
-            if (!Guid.TryParse(info.ExternalReference, out var shipmentId))
+            if (!Guid.TryParse(info.ExternalReference, out var paymentId))
                 return null;
 
-            var payment = await _paymentRepository.GetPendingByShipmentIdAsync(shipmentId)
-                ?? await _paymentRepository.GetLatestByShipmentIdAsync(shipmentId);
-
+            var payment = await _paymentRepository.GetByIdAsync(paymentId);
             if (payment == null)
+                return null;
+
+            if (currentUserId.HasValue && currentUserRole != null &&
+                currentUserRole == UserRoleEnum.Client.ToString() &&
+                payment.CreatedByUserId != currentUserId.Value)
             {
-                var shipmentForNewPayment = await _shipmentRepository.GetByIdAsync(shipmentId);
-                if (shipmentForNewPayment == null)
-                    return null;
-
-                payment = new Payment
-                {
-                    Id = Guid.NewGuid(),
-                    ShipmentId = shipmentId,
-                    Amount = info.TransactionAmount ?? shipmentForNewPayment.Price,
-                    PaymentStatusId = (int)PaymentStatusEnum.Pending,
-                    CreatedDateTime = DateTime.UtcNow,
-                    UpdatedDateTime = DateTime.UtcNow
-                };
-                await _paymentRepository.AddAsync(payment);
-            }
-
-            if (currentUserId.HasValue && currentUserRole != null)
-            {
-                var shipment = await _shipmentRepository.GetByIdAsync(shipmentId);
-                if (shipment == null)
-                    throw new NotFoundException("Envío no encontrado.");
-
-                EnsureOwnership(shipment, currentUserId.Value, currentUserRole);
+                throw new UnauthorizedAccessException("No tiene autorización para consultar este pago.");
             }
 
             payment.MercadoPagoPaymentId = info.Id.ToString();
             payment.StatusDetail = info.StatusDetail;
-            payment.PaymentStatusId = MapMercadoPagoStatus(info.Status);
+            var newStatus = MapMercadoPagoStatus(info.Status);
+            payment.PaymentStatusId = newStatus;
+
+            if (newStatus == (int)PaymentStatusEnum.Approved && payment.ShipmentId == null)
+            {
+                var createRequest = new CreateShipmentRequest
+                {
+                    Id = payment.PendingShipmentId,
+                    Origin = payment.PendingOrigin,
+                    Destination = payment.PendingDestination,
+                    ShipmentTypeId = payment.PendingShipmentTypeId,
+                    PackageSizeId = payment.PendingPackageSizeId,
+                    OnBehalfOfClientId = payment.PendingOnBehalfOfClientId
+                };
+
+                var createdShipment = await _shipmentService.CreateAsync(createRequest, payment.CreatedByUserId, payment.CreatedByRole);
+                payment.ShipmentId = createdShipment.Id;
+            }
 
             await _paymentRepository.UpdateAsync(payment);
 
