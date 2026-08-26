@@ -80,8 +80,11 @@ namespace Jemar.Aplication.Services
                 throw new ValidationException("Email y contraseña son requeridos.");
 
             var user = await _userRepository.GetByEmailAsync(request.Email.Trim());
-            if (user == null || !user.IsActive)
+            if (user == null)
                 throw new UnauthorizedException("Email o contraseña incorrectos.");
+
+            if (!user.IsActive)
+                throw new UnauthorizedException("Tu cuenta se encuentra deshabilitada. Contactá al administrador.");
 
             if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
                 throw new UnauthorizedException("Email o contraseña incorrectos.");

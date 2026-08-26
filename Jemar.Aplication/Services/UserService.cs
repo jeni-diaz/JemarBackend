@@ -1,4 +1,4 @@
-﻿using Jemar.Aplication.Abstractions;
+using Jemar.Aplication.Abstractions;
 using Jemar.Aplication.Exceptions;
 using Jemar.Aplication.Requests;
 using Jemar.Aplication.Responses;
@@ -115,6 +115,12 @@ namespace Jemar.Aplication.Services
 
             if (user == null)
                 throw new NotFoundException("No existe un usuario con ese email.");
+
+            if (user.RoleId == request.RoleId)
+            {
+                var roleName = ((UserRoleEnum)user.RoleId).ToString();
+                throw new ValidationException($"El usuario ya tiene el rol '{roleName}' asignado.");
+            }
 
             user.RoleId = request.RoleId;
             user.UpdatedDateTime = DateTime.UtcNow;
