@@ -118,7 +118,7 @@ namespace Jemar.Aplication.Services
 
             if (user.RoleId == request.RoleId)
             {
-                var roleName = ((UserRoleEnum)user.RoleId).ToString();
+                var roleName = ((UserRoleEnum)user.RoleId).ToSpanish();
                 throw new ValidationException($"El usuario ya tiene el rol '{roleName}' asignado.");
             }
 
@@ -153,7 +153,6 @@ namespace Jemar.Aplication.Services
 
             return true;
         }
-
 
     }
 }

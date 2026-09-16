@@ -27,5 +27,13 @@ namespace Jemar.Aplication.Mapper
             ShipmentStatusEnum.Cancelled => "Cancelado",
             _ => value.ToString()
         };
+
+        public static string ToSpanish(this UserRoleEnum value) => value switch
+        {
+            UserRoleEnum.Client => "Usuario",
+            UserRoleEnum.Employee => "Empleado",
+            UserRoleEnum.SuperAdmin => "Super Admin",
+            _ => value.ToString()
+        };
     }
 }

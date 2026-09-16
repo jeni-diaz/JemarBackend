@@ -4,8 +4,8 @@ namespace Jemar.Aplication.Requests
 {
     public class UpdateShipmentRequest
     {
-        [Required(ErrorMessage = "Shipment status is required.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Invalid shipment status ID.")]
+        [Required(ErrorMessage = "El estado del envío es requerido.")]
+        [Range(1, int.MaxValue, ErrorMessage = "El estado del envío no es válido.")]
         public int ShipmentStatusId { get; set; }
     }
 }
