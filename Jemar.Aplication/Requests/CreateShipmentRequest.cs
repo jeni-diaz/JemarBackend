@@ -7,20 +7,20 @@ namespace Jemar.Aplication.Requests
     {
         public Guid? Id { get; set; }
 
-        [Required(ErrorMessage = "Origin address is required.")]
-        [MinLength(5, ErrorMessage = "Origin address must be at least 5 characters long.")]
+        [Required(ErrorMessage = "La dirección de origen es requerida.")]
+        [MinLength(5, ErrorMessage = "La dirección de origen debe tener al menos 5 caracteres.")]
         public string Origin { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Destination address is required.")]
-        [MinLength(5, ErrorMessage = "Destination address must be at least 5 characters long.")]
+        [Required(ErrorMessage = "La dirección de destino es requerida.")]
+        [MinLength(5, ErrorMessage = "La dirección de destino debe tener al menos 5 caracteres.")]
         public string Destination { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Shipment type is required.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Invalid shipment type ID.")]
+        [Required(ErrorMessage = "El tipo de envío es requerido.")]
+        [Range(1, int.MaxValue, ErrorMessage = "El tipo de envío no es válido.")]
         public int ShipmentTypeId { get; set; }
 
-        [Required(ErrorMessage = "Package size is required.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Invalid package size ID.")]
+        [Required(ErrorMessage = "El tamaño del paquete es requerido.")]
+        [Range(1, int.MaxValue, ErrorMessage = "El tamaño del paquete no es válido.")]
         public int PackageSizeId { get; set; }
         public Guid? OnBehalfOfClientId { get; set; }
     }
